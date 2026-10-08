@@ -61,12 +61,12 @@ export const App: React.FC = () => {
       {/* Main Workspace */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Left Sidebar (Desktop always, Mobile conditional) */}
-        <div className={`${mobileTab === 'controls' ? 'flex w-full' : 'hidden md:flex'}`}>
+        <div className={`${mobileTab === 'controls' ? 'flex flex-1' : 'hidden'} md:flex md:w-80 md:shrink-0`}>
           <LeftSidebar />
         </div>
 
         {/* Center Preview Canvas */}
-        <div className={`${mobileTab === 'preview' ? 'flex flex-1' : 'hidden md:flex flex-1'}`}>
+        <div className={`${mobileTab === 'preview' ? 'flex flex-1' : 'hidden'} md:flex md:flex-1 min-w-0`}>
           <PreviewCanvas />
         </div>
 

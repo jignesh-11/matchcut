@@ -69,9 +69,9 @@ export const TopBar: React.FC = () => {
   };
 
   return (
-    <header className="h-14 border-b border-[#242933] bg-[#12151b] px-4 flex items-center justify-between select-none z-30 shrink-0 overflow-x-auto no-scrollbar gap-4">
+    <header className="h-14 border-b border-[#242933] bg-[#12151b] px-2 md:px-4 flex items-center justify-between select-none z-30 shrink-0">
       {/* Brand & Landing toggle */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 md:gap-3 shrink-0">
         <button
           onClick={() => setCurrentView(currentView === 'landing' ? 'editor' : 'landing')}
           className="flex items-center gap-2 group text-left"
@@ -80,14 +80,14 @@ export const TopBar: React.FC = () => {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <div>
+          <div className="hidden sm:block">
             <div className="flex items-center gap-1.5 font-bold tracking-tight text-white text-sm">
               <span>MATCHTYPE</span>
               <span className="text-[10px] font-semibold tracking-wider px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
                 PRO
               </span>
             </div>
-            <div className="text-[11px] text-slate-400 hidden sm:block">
+            <div className="text-[11px] text-slate-400 hidden md:block">
               Kinetic Text Match Cut
             </div>
           </div>
@@ -106,11 +106,11 @@ export const TopBar: React.FC = () => {
       </div>
 
       {/* Aspect Ratio & Undo/Redo */}
-      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+      <div className="flex items-center gap-1 md:gap-2 shrink-0">
         <div className="flex items-center bg-[#171a22] p-0.5 rounded-lg border border-[#242933]">
           <button
             onClick={() => setAspectRatio('9:16')}
-            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+            className={`flex items-center gap-1 px-2 py-1 md:px-2.5 text-xs font-medium rounded-md transition-all ${
               aspectRatio === '9:16'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-[#202530]'
@@ -122,7 +122,7 @@ export const TopBar: React.FC = () => {
           </button>
           <button
             onClick={() => setAspectRatio('1:1')}
-            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+            className={`flex items-center gap-1 px-2 py-1 md:px-2.5 text-xs font-medium rounded-md transition-all ${
               aspectRatio === '1:1'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-[#202530]'
@@ -134,7 +134,7 @@ export const TopBar: React.FC = () => {
           </button>
           <button
             onClick={() => setAspectRatio('16:9')}
-            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+            className={`flex items-center gap-1 px-2 py-1 md:px-2.5 text-xs font-medium rounded-md transition-all ${
               aspectRatio === '16:9'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-[#202530]'
@@ -149,7 +149,7 @@ export const TopBar: React.FC = () => {
         <div className="h-5 w-px bg-[#242933] mx-1 hidden sm:block" />
 
         {/* Undo / Redo */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="hidden sm:flex items-center gap-1 shrink-0">
           <button
             onClick={undo}
             disabled={!canUndo()}
