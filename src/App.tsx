@@ -37,7 +37,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Mobile Tab Switcher (< 768px) */}
-      <div className="flex md:hidden bg-[#11141a] border-b border-[#242933] p-1 justify-around text-xs">
+      <div className="flex md:hidden bg-[#11141a] border-b border-[#242933] p-1 justify-around text-xs shrink-0">
         <button
           onClick={() => setMobileTab('preview')}
           className={`flex items-center gap-1.5 py-1 px-3 rounded-md ${

@@ -98,7 +98,7 @@ export const LeftSidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-80 border-r border-[#242933] bg-[#12151b] flex flex-col h-full select-none shrink-0 z-20">
+    <aside className="w-full md:w-80 border-r border-[#242933] bg-[#12151b] flex flex-col h-full select-none shrink-0 z-20">
       {/* Sidebar Tabs */}
       <div className="grid grid-cols-4 border-b border-[#242933] bg-[#0f1217] p-1">
         <button

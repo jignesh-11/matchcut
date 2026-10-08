@@ -71,12 +71,12 @@ export const Timeline: React.FC = () => {
           <div className="flex items-center gap-1 font-mono text-[11px] text-slate-400">
             <span>Duration:</span>
             <span className="text-white font-bold">{totalDuration.toFixed(2)}s</span>
-            <span>({Math.round(totalDuration * animation.fps)} frames @ {animation.fps}fps)</span>
+            <span className="hidden sm:inline">({Math.round(totalDuration * animation.fps)} frames @ {animation.fps}fps)</span>
           </div>
         </div>
 
         {/* Global Speed Selector */}
-        <div className="flex items-center gap-2">
+        <div className="hidden sm:flex items-center gap-2">
           <div className="flex items-center gap-1 text-[11px]">
             <Gauge className="w-3.5 h-3.5 text-slate-400" />
             <span>Speed:</span>

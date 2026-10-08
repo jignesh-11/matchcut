@@ -69,9 +69,9 @@ export const TopBar: React.FC = () => {
   };
 
   return (
-    <header className="h-14 border-b border-[#242933] bg-[#12151b] px-4 flex items-center justify-between select-none z-30 shrink-0">
+    <header className="h-14 border-b border-[#242933] bg-[#12151b] px-4 flex items-center justify-between select-none z-30 shrink-0 overflow-x-auto no-scrollbar gap-4">
       {/* Brand & Landing toggle */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 shrink-0">
         <button
           onClick={() => setCurrentView(currentView === 'landing' ? 'editor' : 'landing')}
           className="flex items-center gap-2 group text-left"
@@ -106,7 +106,7 @@ export const TopBar: React.FC = () => {
       </div>
 
       {/* Aspect Ratio & Undo/Redo */}
-      <div className="flex items-center gap-1 sm:gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <div className="flex items-center bg-[#171a22] p-0.5 rounded-lg border border-[#242933]">
           <button
             onClick={() => setAspectRatio('9:16')}
@@ -149,7 +149,7 @@ export const TopBar: React.FC = () => {
         <div className="h-5 w-px bg-[#242933] mx-1 hidden sm:block" />
 
         {/* Undo / Redo */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={undo}
             disabled={!canUndo()}
@@ -170,7 +170,7 @@ export const TopBar: React.FC = () => {
       </div>
 
       {/* Project actions & Export */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <input
           type="file"
           ref={fileInputRef}
