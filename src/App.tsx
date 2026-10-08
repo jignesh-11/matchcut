@@ -7,7 +7,7 @@ import { Timeline } from './components/timeline/Timeline';
 import { ExportModal } from './components/export/ExportModal';
 import { LandingPage } from './components/landing/LandingPage';
 import { Sliders, Eye } from 'lucide-react';
-
+// simple test comment
 export const App: React.FC = () => {
   const { currentView, notification } = useEditorStore();
   const [mobileTab, setMobileTab] = useState<'preview' | 'controls' | 'inspector'>('preview');
