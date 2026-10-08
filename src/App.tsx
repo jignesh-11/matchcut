@@ -3,11 +3,10 @@ import { useEditorStore } from './stores/editorStore';
 import { TopBar } from './components/editor/TopBar';
 import { LeftSidebar } from './components/editor/LeftSidebar';
 import { PreviewCanvas } from './components/preview/PreviewCanvas';
-import { RightSidebar } from './components/editor/RightSidebar';
 import { Timeline } from './components/timeline/Timeline';
 import { ExportModal } from './components/export/ExportModal';
 import { LandingPage } from './components/landing/LandingPage';
-import { Sliders, Layers, Eye } from 'lucide-react';
+import { Sliders, Eye } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { currentView, notification } = useEditorStore();
@@ -57,15 +56,6 @@ export const App: React.FC = () => {
           <Sliders className="w-3.5 h-3.5" />
           <span>Controls</span>
         </button>
-        <button
-          onClick={() => setMobileTab('inspector')}
-          className={`flex items-center gap-1.5 py-1 px-3 rounded-md ${
-            mobileTab === 'inspector' ? 'bg-blue-600 text-white font-bold' : 'text-slate-400'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Anchor</span>
-        </button>
       </div>
 
       {/* Main Workspace */}
@@ -80,10 +70,6 @@ export const App: React.FC = () => {
           <PreviewCanvas />
         </div>
 
-        {/* Right Sidebar */}
-        <div className={`${mobileTab === 'inspector' ? 'flex w-full' : 'hidden lg:flex'}`}>
-          <RightSidebar />
-        </div>
       </div>
 
       {/* Bottom Timeline */}

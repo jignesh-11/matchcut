@@ -69,6 +69,8 @@ export const LeftSidebar: React.FC = () => {
     animation,
     setAnimation,
     regenerateCompositions,
+    anchor,
+    setAnchor,
   } = useEditorStore();
 
   const occurrences = findMatchWordOccurrences(text, matchWord);
@@ -267,6 +269,44 @@ export const LeftSidebar: React.FC = () => {
         {/* ===================== TAB 2: LAYOUT ===================== */}
         {activeSidebarTab === 'layout' && (
           <div className="space-y-5">
+            {/* Anchor Positioning */}
+            <div>
+              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                Anchor Position
+              </label>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-slate-500">X-Axis</span>
+                    <span className="font-mono text-white text-[10px]">{Math.round(anchor.x * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="0.8"
+                    step="0.01"
+                    value={anchor.x}
+                    onChange={(e) => setAnchor({ ...anchor, x: parseFloat(e.target.value) })}
+                    className="w-full accent-blue-500"
+                  />
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] text-slate-500">Y-Axis</span>
+                    <span className="font-mono text-white text-[10px]">{Math.round(anchor.y * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="0.8"
+                    step="0.01"
+                    value={anchor.y}
+                    onChange={(e) => setAnchor({ ...anchor, y: parseFloat(e.target.value) })}
+                    className="w-full accent-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
             {/* Layout Style */}
             <div>
               <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">

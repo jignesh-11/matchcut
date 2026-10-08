@@ -23,33 +23,58 @@ export function generateDraftLayout(ctx: LayoutGeneratorContext): {
 } {
   const { style } = ctx;
 
+  let draft;
   switch (style) {
     case 'center-stack':
-      return layoutCenterStack(ctx);
+      draft = layoutCenterStack(ctx); break;
     case 'editorial-left':
-      return layoutEditorial(ctx, 'left');
+      draft = layoutEditorial(ctx, 'left'); break;
     case 'editorial-right':
-      return layoutEditorial(ctx, 'right');
+      draft = layoutEditorial(ctx, 'right'); break;
     case 'huge-typography':
-      return layoutHugeTypography(ctx);
+      draft = layoutHugeTypography(ctx); break;
     case 'scattered':
-      return layoutScattered(ctx);
+      draft = layoutScattered(ctx); break;
     case 'magazine':
-      return layoutMagazine(ctx);
+      draft = layoutMagazine(ctx); break;
     case 'minimal':
-      return layoutMinimal(ctx);
+      draft = layoutMinimal(ctx); break;
     case 'vertical':
-      return layoutVertical(ctx);
+      draft = layoutVertical(ctx); break;
     case 'split-screen':
-      return layoutSplitScreen(ctx);
+      draft = layoutSplitScreen(ctx); break;
     case 'fullscreen-word':
-      return layoutFullscreenWord(ctx);
+      draft = layoutFullscreenWord(ctx); break;
     case 'random-controlled':
-      return layoutRandomControlled(ctx);
+      draft = layoutRandomControlled(ctx); break;
     case 'kinetic':
     default:
-      return layoutKinetic(ctx);
+      draft = layoutKinetic(ctx); break;
   }
+
+  const maxWidth = ctx.canvasWidth * 0.9;
+  for (const el of draft.elements) {
+    if (el.bounds.width > maxWidth) {
+      const scale = maxWidth / el.bounds.width;
+      el.fontSize = Math.max(10, Math.floor(el.fontSize * scale));
+      el.bounds = computeTextVisualBounds(
+        el.text,
+        el.x,
+        el.y,
+        el.fontFamily,
+        el.fontSize,
+        el.fontWeight,
+        el.fontStyle || 'normal',
+        el.letterSpacing,
+        el.alignment,
+        'middle'
+      );
+      el.width = el.bounds.width;
+      el.height = el.bounds.height;
+    }
+  }
+
+  return draft;
 }
 
 // 1. Center Stack
