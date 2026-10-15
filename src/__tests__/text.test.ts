@@ -7,11 +7,11 @@ import {
 
 describe('Text parsing and match extraction', () => {
   it('should find single occurrence of match word', () => {
-    const text = 'I built my first Shopify app last year.';
-    const occs = findMatchWordOccurrences(text, 'Shopify');
+    const text = 'I built my first kinetic video last year.';
+    const occs = findMatchWordOccurrences(text, 'kinetic');
 
     expect(occs.length).toBe(1);
-    expect(occs[0].matchedText).toBe('Shopify');
+    expect(occs[0].matchedText).toBe('kinetic');
     expect(occs[0].startIndex).toBe(17);
     expect(occs[0].endIndex).toBe(24);
   });

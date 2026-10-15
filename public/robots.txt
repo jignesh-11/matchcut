@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://matchcut-steel.vercel.app/sitemap.xml

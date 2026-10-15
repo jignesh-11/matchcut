@@ -20,24 +20,44 @@ import { ANIMATION_PRESETS } from '../../presets/animations';
 
 const SAMPLE_TEXTS = [
   {
-    label: 'Build & Launch',
-    text: `Build something people remember.\nMake it simple.\nMake it fast.\nMake it yours.`,
-    matchWord: 'Make',
+    label: '⚡ Stop Scrolling',
+    text: `Stop scrolling for a second.\nStop wasting precious time.\nStop doubting your potential.\nStop waiting for permission.`,
+    matchWord: 'Stop',
   },
   {
-    label: 'Shopify App',
-    text: `I built my first Shopify app last year.\nMy new Shopify app is finally live.\nBuilding Shopify apps is insanely fun.`,
-    matchWord: 'Shopify',
+    label: '🔥 Hard Choices',
+    text: `Hard choices easy life.\nEasy choices hard life.\nMake the hard choices.`,
+    matchWord: 'choices',
   },
   {
-    label: 'Focus & Win',
-    text: `Everybody wants the results.\nNobody wants the boring work.\nFocus on the boring work.`,
-    matchWord: 'boring',
+    label: '🚀 Never Stop',
+    text: `Never stop building.\nNever stop shipping.\nNever stop learning.\nNever stop growing.`,
+    matchWord: 'stop',
   },
   {
-    label: 'Consistency',
-    text: `You do not rise to your goals.\nYou fall to your systems.\nTrust your systems.`,
+    label: '💡 The Secret',
+    text: `Everybody searches for the secret.\nDaily discipline is the only secret.\nRelentless execution is the real secret.`,
+    matchWord: 'secret',
+  },
+  {
+    label: '🤖 AI Revolution',
+    text: `AI will not replace humans.\nHumans using AI will lead.\nMaster the new AI tools.`,
+    matchWord: 'AI',
+  },
+  {
+    label: '🎯 Build Systems',
+    text: `Build better daily systems.\nStick to your proven systems.\nTrust your systems.`,
     matchWord: 'systems',
+  },
+  {
+    label: '✨ One Decision',
+    text: `You are one decision away.\nMake that one decision count.\nEvery bold decision matters.`,
+    matchWord: 'decision',
+  },
+  {
+    label: '💎 Make It Yours',
+    text: `Make it simple.\nMake it bold.\nMake it fast.\nMake it yours.`,
+    matchWord: 'Make',
   },
 ];
 
