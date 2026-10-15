@@ -33,6 +33,14 @@ export interface AnimationSettings {
   speedMultiplier: number;
 }
 
+export type SoundEffectType = 'shutter' | 'whoosh' | 'thud' | 'glitch' | 'pop' | 'typewriter' | 'none';
+
+export interface SoundConfig {
+  effect: SoundEffectType;
+  enabled: boolean;
+  volume: number; // 0 to 1
+}
+
 export interface ExportSettings {
   resolution: '720p' | '1080p' | '1440p';
   aspectRatio: AspectRatioType;

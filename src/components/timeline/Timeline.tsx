@@ -5,8 +5,13 @@ import {
   SlidersHorizontal,
   ChevronRight,
   Maximize2,
+  Volume2,
+  VolumeX,
+  Music,
 } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
+import { soundManager } from '../../engine/audio/soundManager';
+import { SoundEffectType } from '../../types/editor';
 
 export const Timeline: React.FC = () => {
   const {
@@ -18,6 +23,8 @@ export const Timeline: React.FC = () => {
     setIsPlaying,
     animation,
     setAnimation,
+    sound,
+    setSound,
   } = useEditorStore();
 
   const trackRef = useRef<HTMLDivElement>(null);
@@ -75,26 +82,76 @@ export const Timeline: React.FC = () => {
           </div>
         </div>
 
-        {/* Global Speed Selector */}
-        <div className="hidden sm:flex items-center gap-2">
-          <div className="flex items-center gap-1 text-[11px]">
-            <Gauge className="w-3.5 h-3.5 text-slate-400" />
-            <span>Speed:</span>
+        <div className="flex items-center gap-4">
+          {/* Audio Sound FX Controls */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => {
+                const nextEnabled = !sound.enabled;
+                setSound({ enabled: nextEnabled });
+                if (nextEnabled && sound.effect !== 'none') {
+                  soundManager.playCutSound(sound.effect, sound.volume);
+                }
+              }}
+              className={`flex items-center gap-1 px-2 py-1 rounded border text-[11px] font-medium transition-colors ${
+                sound.enabled && sound.effect !== 'none'
+                  ? 'bg-blue-600/20 border-blue-500/50 text-blue-300'
+                  : 'bg-[#171b23] border-[#242933] text-slate-500 hover:text-slate-300'
+              }`}
+              title={sound.enabled ? 'Mute Sound FX' : 'Enable Sound FX'}
+            >
+              {sound.enabled && sound.effect !== 'none' ? (
+                <Volume2 className="w-3.5 h-3.5 text-blue-400" />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5 text-slate-500" />
+              )}
+              <span className="hidden md:inline">SFX</span>
+            </button>
+
+            <select
+              value={sound.enabled ? sound.effect : 'none'}
+              onChange={(e) => {
+                const val = e.target.value as SoundEffectType;
+                if (val === 'none') {
+                  setSound({ effect: 'none', enabled: false });
+                } else {
+                  setSound({ effect: val, enabled: true });
+                  soundManager.playCutSound(val, sound.volume);
+                }
+              }}
+              className="bg-[#171b23] border border-[#242933] text-slate-200 rounded px-2 py-1 text-[11px] focus:outline-none focus:border-blue-500 cursor-pointer"
+            >
+              <option value="shutter">📸 Shutter</option>
+              <option value="whoosh">💨 Whoosh</option>
+              <option value="thud">💥 Bass Thud</option>
+              <option value="glitch">🕹️ Glitch</option>
+              <option value="pop">🔘 Pop</option>
+              <option value="typewriter">⌨️ Typewriter</option>
+              <option value="none">🔇 Off</option>
+            </select>
           </div>
-          <div className="flex items-center bg-[#171b23] rounded p-0.5 border border-[#242933]">
-            {([0.5, 0.75, 1.0, 1.5, 2.0] as const).map((spd) => (
-              <button
-                key={spd}
-                onClick={() => setAnimation({ speedMultiplier: spd })}
-                className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium transition-colors ${
-                  animation.speedMultiplier === spd
-                    ? 'bg-blue-600 text-white font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {spd}x
-              </button>
-            ))}
+
+          {/* Global Speed Selector */}
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="flex items-center gap-1 text-[11px]">
+              <Gauge className="w-3.5 h-3.5 text-slate-400" />
+              <span>Speed:</span>
+            </div>
+            <div className="flex items-center bg-[#171b23] rounded p-0.5 border border-[#242933]">
+              {([0.5, 0.75, 1.0, 1.5, 2.0] as const).map((spd) => (
+                <button
+                  key={spd}
+                  onClick={() => setAnimation({ speedMultiplier: spd })}
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium transition-colors ${
+                    animation.speedMultiplier === spd
+                      ? 'bg-blue-600 text-white font-bold'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {spd}x
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

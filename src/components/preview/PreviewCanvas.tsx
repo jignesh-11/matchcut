@@ -13,6 +13,7 @@ import { useEditorStore } from '../../stores/editorStore';
 import { canvasRenderer } from '../../engine/renderer/canvasRenderer';
 import { getFrameCompositionInfo } from '../../engine/video/videoExporter';
 import { fontManager } from '../../engine/fonts/fontManager';
+import { soundManager } from '../../engine/audio/soundManager';
 
 export const PreviewCanvas: React.FC = () => {
   const {
@@ -31,6 +32,7 @@ export const PreviewCanvas: React.FC = () => {
     background,
     effects,
     animation,
+    sound,
     anchor,
     setAnchor,
   } = useEditorStore();
@@ -43,6 +45,12 @@ export const PreviewCanvas: React.FC = () => {
   const lastTimeRef = useRef<number>(performance.now());
   const currentTimeRef = useRef<number>(currentTime);
   const isPlayingRef = useRef<boolean>(isPlaying);
+  const soundRef = useRef(sound);
+  const lastPlayedCompIndexRef = useRef<number>(-1);
+
+  useEffect(() => {
+    soundRef.current = sound;
+  }, [sound]);
 
   // Live performance stats
   const [liveFps, setLiveFps] = useState<number>(30);
@@ -88,6 +96,14 @@ export const PreviewCanvas: React.FC = () => {
       setCurrentCompositionIndex(compositionIndex);
     }
 
+    // Play synced audio transition sound on each cut
+    if (isPlayingRef.current && compositionIndex !== lastPlayedCompIndexRef.current) {
+      lastPlayedCompIndexRef.current = compositionIndex;
+      if (soundRef.current.enabled && soundRef.current.effect !== 'none') {
+        soundManager.playCutSound(soundRef.current.effect, soundRef.current.volume);
+      }
+    }
+
     // Canvas scaling to match preview resolution
     ctx.save();
     ctx.scale(previewScale, previewScale);
@@ -129,6 +145,7 @@ export const PreviewCanvas: React.FC = () => {
         let nextTime = currentTimeRef.current + deltaSec * animation.speedMultiplier;
         if (nextTime >= totalDuration) {
           nextTime = 0; // Loop playback seamlessly
+          lastPlayedCompIndexRef.current = -1;
         }
         currentTimeRef.current = nextTime;
         drawFrame(nextTime);

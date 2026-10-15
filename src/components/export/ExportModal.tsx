@@ -25,6 +25,7 @@ export const ExportModal: React.FC = () => {
     effects,
     animation,
     aspectRatio,
+    sound,
   } = useEditorStore();
 
   const [isExporting, setIsExporting] = useState(false);
@@ -60,6 +61,7 @@ export const ExportModal: React.FC = () => {
         resolution: exportSettings.resolution,
         aspectRatio,
         format: exportSettings.format,
+        sound,
         onProgress: (p) => setProgress(p),
         signal: abortControllerRef.current.signal,
       });
@@ -226,6 +228,16 @@ export const ExportModal: React.FC = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Audio Sound FX Status */}
+              <div className="flex items-center justify-between p-2.5 bg-[#171b24] rounded-lg border border-[#252c3a] text-xs">
+                <span className="text-slate-400">Audio Track:</span>
+                <span className="font-semibold text-white capitalize">
+                  {sound.enabled && sound.effect !== 'none'
+                    ? `🔊 Synced SFX (${sound.effect})`
+                    : '🔇 Muted (Video Only)'}
+                </span>
               </div>
             </div>
           )}

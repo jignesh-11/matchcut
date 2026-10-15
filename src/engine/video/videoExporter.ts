@@ -1,6 +1,8 @@
 import { Muxer as Mp4Muxer, ArrayBufferTarget as Mp4ArrayBufferTarget } from 'mp4-muxer';
 import { Muxer as WebmMuxer, ArrayBufferTarget as WebmArrayBufferTarget } from 'webm-muxer';
 import { Composition, BackgroundConfig, EffectsConfig, TransitionType, AspectRatioType } from '../../types/rendering';
+import { SoundConfig } from '../../types/editor';
+import { soundManager } from '../audio/soundManager';
 import { canvasRenderer } from '../renderer/canvasRenderer';
 
 export interface ExportJobOptions {
@@ -13,6 +15,7 @@ export interface ExportJobOptions {
   resolution: '720p' | '1080p' | '1440p';
   aspectRatio: AspectRatioType;
   format: 'mp4' | 'webm';
+  sound?: SoundConfig;
   onProgress: (progress: number) => void;
   signal?: AbortSignal;
 }
@@ -58,8 +61,13 @@ export class VideoExporter {
    * Main export method that executes WebCodecs or MediaRecorder fallback
    */
   public static async exportVideo(options: ExportJobOptions): Promise<Blob> {
-    const { onProgress } = options;
+    const { onProgress, sound } = options;
     onProgress(0.01);
+
+    // If sound is enabled and an effect is chosen, route through MediaRecorder to mux audio track
+    if (sound && sound.enabled && sound.effect !== 'none') {
+      return await this.exportWithMediaRecorder(options);
+    }
 
     if (this.isWebCodecsSupported()) {
       try {
@@ -258,6 +266,43 @@ export class VideoExporter {
     const totalFrames = Math.max(1, Math.round(totalDuration * fps));
 
     const stream = canvas.captureStream(fps);
+
+    // If sound is enabled, synthesize and attach audio track to the stream
+    if (options.sound && options.sound.enabled && options.sound.effect !== 'none') {
+      try {
+        const cutTimestamps: number[] = [];
+        let acc = 0;
+        for (let i = 0; i < compositions.length; i++) {
+          cutTimestamps.push(acc);
+          acc += compositions[i].duration;
+        }
+
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtx) {
+          const audioCtx = new AudioCtx();
+          const dest = audioCtx.createMediaStreamDestination();
+          const audioBuf = await soundManager.renderOfflineAudioTrack(
+            totalDuration,
+            cutTimestamps,
+            options.sound.effect,
+            options.sound.volume
+          );
+          if (audioBuf) {
+            const source = audioCtx.createBufferSource();
+            source.buffer = audioBuf;
+            source.connect(dest);
+            source.start(0);
+            const audioTrack = dest.stream.getAudioTracks()[0];
+            if (audioTrack) {
+              stream.addTrack(audioTrack);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Could not attach audio track to export stream:', err);
+      }
+    }
+
     const mimeType = format === 'mp4' && MediaRecorder.isTypeSupported('video/mp4')
       ? 'video/mp4'
       : 'video/webm';

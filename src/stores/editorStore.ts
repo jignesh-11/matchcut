@@ -5,6 +5,7 @@ import {
   FontConfig,
   MatchWordAnchorConfig,
   ProjectData,
+  SoundConfig,
 } from '../types/editor';
 import {
   AspectRatioType,
@@ -72,6 +73,12 @@ export const DEFAULT_ANCHOR: MatchWordAnchorConfig = {
   showAnchorIndicator: false,
 };
 
+export const DEFAULT_SOUND: SoundConfig = {
+  effect: 'shutter',
+  enabled: true,
+  volume: 0.8,
+};
+
 export interface EditorStoreState {
   // App view
   currentView: 'landing' | 'editor';
@@ -94,6 +101,7 @@ export interface EditorStoreState {
   background: BackgroundConfig;
   effects: EffectsConfig;
   animation: AnimationSettings;
+  sound: SoundConfig;
   compositions: Composition[];
 
   // Playback & UI state
@@ -126,6 +134,7 @@ export interface EditorStoreState {
   setBackground: (bg: Partial<BackgroundConfig>) => void;
   setEffects: (eff: Partial<EffectsConfig>) => void;
   setAnimation: (anim: Partial<AnimationSettings>) => void;
+  setSound: (sound: Partial<SoundConfig>) => void;
   setExportSettings: (settings: Partial<ExportSettings>) => void;
   setActiveSidebarTab: (tab: 'text' | 'layout' | 'style' | 'animation') => void;
   setIsExportModalOpen: (open: boolean) => void;
@@ -240,6 +249,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
     background: DEFAULT_BACKGROUND,
     effects: DEFAULT_EFFECTS,
     animation: DEFAULT_ANIMATION,
+    sound: DEFAULT_SOUND,
     compositions: initCompositions,
 
     isPlaying: true,
@@ -367,6 +377,11 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
         }));
         set({ compositions: comps });
       }
+    },
+
+    setSound: (soundUpdate) => {
+      const state = get();
+      set({ sound: { ...state.sound, ...soundUpdate } });
     },
 
     setExportSettings: (settings) => {
@@ -586,6 +601,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
         background: DEFAULT_BACKGROUND,
         effects: DEFAULT_EFFECTS,
         animation: DEFAULT_ANIMATION,
+        sound: DEFAULT_SOUND,
         compositions: comps,
         undoStack: pushToUndo(state),
         redoStack: [],
