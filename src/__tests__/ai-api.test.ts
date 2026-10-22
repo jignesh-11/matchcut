@@ -99,6 +99,7 @@ describe('Serverless API Route: /api/generate', () => {
 
   it('should successfully return parsed and validated sentences when provider returns valid response', async () => {
     process.env.AI_API_KEY = 'mock-test-key';
+    process.env.AI_PROVIDER = 'openai';
 
     const mockApiResponse = {
       choices: [
@@ -148,11 +149,12 @@ describe('Serverless API Route: /api/generate', () => {
 
   it('should gracefully handle provider HTTP error (500) without exposing secret keys', async () => {
     process.env.AI_API_KEY = 'secret-api-key-999';
+    process.env.AI_PROVIDER = 'openai';
 
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       status: 500,
-      json: async () => ({ error: 'Internal provider outage' }),
+      json: async () => ({ error: { message: 'Internal provider outage' } }),
       text: async () => 'Internal provider outage',
     } as any);
 
@@ -165,7 +167,7 @@ describe('Serverless API Route: /api/generate', () => {
     expect(res.getStatusCode()).toBe(502);
     const data = res.getData();
     expect(data.success).toBe(false);
-    expect(data.error).toContain('Provider error (500)');
+    expect(data.error).toContain('Internal provider outage');
     // Crucial security requirement: API key must NEVER be leaked in errors
     expect(JSON.stringify(data)).not.toContain('secret-api-key-999');
 
@@ -215,7 +217,7 @@ describe('Serverless API Route: /api/generate', () => {
     const data = res.getData();
     expect(data.success).toBe(true);
     expect(data.results[0].text).toBe('Gemini flash sentence.');
-    expect(data.provider).toBe('Google Gemini');
+    expect(data.provider).toContain('Google Gemini');
 
     fetchSpy.mockRestore();
   });

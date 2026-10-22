@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
@@ -40,26 +40,34 @@ function apiDevPlugin() {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react(), apiDevPlugin()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  for (const [k, v] of Object.entries(env)) {
+    if (!process.env[k]) {
+      process.env[k] = v;
+    }
+  }
+
+  return {
+    plugins: [react(), apiDevPlugin()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
     },
-  },
-  server: {
-    port: 3000,
-    open: false,
-    headers: {
-      // Cross-origin isolation headers if needed for SharedArrayBuffer / high-perf timers
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
+    server: {
+      port: 3000,
+      open: false,
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+      },
     },
-  },
-  // @ts-expect-error Vitest config is handled seamlessly
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test-setup.ts'],
-  },
+    // @ts-expect-error Vitest config is handled seamlessly
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./src/test-setup.ts'],
+    },
+  };
 });

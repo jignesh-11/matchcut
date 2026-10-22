@@ -50,6 +50,17 @@ function sendResponse(
   }
 }
 
+// Global rotating key index across requests
+let globalKeyIndex = 0;
+
+function parseKeyPool(rawKeys: string | undefined): string[] {
+  if (!rawKeys) return [];
+  return rawKeys
+    .split(/[,;\n]+/)
+    .map((k) => k.trim())
+    .filter((k) => k.length > 0);
+}
+
 export default async function handler(req: any, res: any) {
   // 1. Enforce POST method
   if (req.method !== 'POST') {
@@ -95,18 +106,21 @@ export default async function handler(req: any, res: any) {
 
   const options = validation.data;
 
-  // 4. Verify Server-Side API Configuration or Client-Provided Key
-  const clientKey =
-    (req.headers['x-api-key'] as string)?.trim() ||
-    (typeof rawBody.apiKey === 'string' ? rawBody.apiKey.trim() : '');
+  // 4. Extract API Key Pool (Client-provided or Server Environment)
+  const clientKeys = parseKeyPool(
+    (req.headers['x-api-key'] as string) ||
+    (typeof rawBody.apiKey === 'string' ? rawBody.apiKey : '')
+  );
 
-  const apiKey =
-    clientKey ||
-    process.env.AI_API_KEY?.trim() ||
-    process.env.GEMINI_API_KEY?.trim() ||
-    process.env.OPENAI_API_KEY?.trim();
+  const envKeys = parseKeyPool(
+    process.env.AI_API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    process.env.OPENAI_API_KEY
+  );
 
-  if (!apiKey || apiKey.length === 0) {
+  const keyPool = clientKeys.length > 0 ? clientKeys : envKeys;
+
+  if (keyPool.length === 0) {
     return sendResponse(res, 503, {
       success: false,
       error:
@@ -114,168 +128,195 @@ export default async function handler(req: any, res: any) {
     });
   }
 
-  // Auto-detect provider if not explicitly specified
-  let provider = (process.env.AI_PROVIDER || '').toLowerCase();
-  if (!provider) {
-    if (apiKey.startsWith('AIzaSy') || process.env.GEMINI_API_KEY) {
-      provider = 'gemini';
-    } else if (apiKey.startsWith('gsk_')) {
-      provider = 'groq';
-    } else {
-      provider = 'openai';
-    }
-  } else if (apiKey.startsWith('AIzaSy')) {
-    provider = 'gemini';
-  }
-
-  const model =
-    process.env.AI_MODEL ||
-    (provider === 'gemini' ? 'gemini-1.5-flash' : 'gpt-4o-mini');
-
-  const baseUrl =
-    process.env.AI_BASE_URL ||
-    (provider === 'groq'
-      ? 'https://api.groq.com/openai/v1/chat/completions'
-      : provider === 'gemini'
-      ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
-          apiKey
-        )}`
-      : 'https://api.openai.com/v1/chat/completions');
-
   const systemPrompt = buildSystemPrompt(options);
   const userPrompt = `Concept / Mood: "${options.prompt}".`;
 
-  // 5. Execute generation request with timeout
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  // Rotate starting key to distribute requests evenly across available keys
+  const startIndex = globalKeyIndex++ % keyPool.length;
+  const maxAttempts = Math.min(keyPool.length, 9);
+  let lastError = '';
 
-  try {
-    let rawContent = '';
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const apiKey = keyPool[(startIndex + attempt) % keyPool.length];
 
-    if (provider === 'gemini') {
-      // Google Gemini API payload (support both gemini-1.5-flash and gemini-2.0-flash)
-      const response = await fetch(baseUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 800,
-            responseMimeType: 'application/json',
+    // Auto-detect provider for this key
+    let provider = (process.env.AI_PROVIDER || '').toLowerCase();
+    if (!provider) {
+      if (apiKey.startsWith('AIzaSy') || process.env.GEMINI_API_KEY) {
+        provider = 'gemini';
+      } else if (apiKey.startsWith('gsk_')) {
+        provider = 'groq';
+      } else {
+        provider = 'openai';
+      }
+    } else if (apiKey.startsWith('AIzaSy')) {
+      provider = 'gemini';
+    }
+
+    const model =
+      process.env.AI_MODEL ||
+      (provider === 'gemini' ? 'gemini-2.5-flash' : 'gpt-4o-mini');
+
+    const baseUrl =
+      process.env.AI_BASE_URL ||
+      (provider === 'groq'
+        ? 'https://api.groq.com/openai/v1/chat/completions'
+        : provider === 'gemini'
+        ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
+            apiKey
+          )}`
+        : 'https://api.openai.com/v1/chat/completions');
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      let rawContent = '';
+
+      if (provider === 'gemini') {
+        const response = await fetch(baseUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey,
           },
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorJson = (await response.json().catch(() => null)) as any;
-        const errorDetail =
-          errorJson?.error?.message ||
-          `Gemini API returned error code ${response.status}. Please verify your API key at aistudio.google.com.`;
-        console.error('Gemini Provider error:', response.status, errorDetail);
-        return sendResponse(res, response.status >= 500 ? 502 : 400, {
-          success: false,
-          error: errorDetail,
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 2048,
+              responseMimeType: 'application/json',
+              thinkingConfig: {
+                thinkingBudget: 0,
+              },
+            },
+          }),
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorJson = (await response.json().catch(() => null)) as any;
+          const errorDetail =
+            errorJson?.error?.message ||
+            `Gemini API returned error code ${response.status}.`;
+
+          // If key fails due to rate limit (429) or key-specific authorization/quota/leaked issues, try next key in pool
+          if ((response.status === 429 || response.status === 403 || response.status === 401 || response.status === 400) && attempt + 1 < maxAttempts) {
+            console.warn(`Key attempt ${attempt + 1}/${maxAttempts} failed with ${response.status} (${errorDetail}), rotating to next key in pool...`);
+            lastError = errorDetail;
+            continue;
+          }
+
+          console.error('Gemini Provider error:', response.status, errorDetail);
+          return sendResponse(res, response.status >= 500 ? 502 : 400, {
+            success: false,
+            error: errorDetail,
+          });
+        }
+
+        const json = (await response.json()) as any;
+        rawContent = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        if (!rawContent) {
+          const finishReason = json.candidates?.[0]?.finishReason;
+          return sendResponse(res, 502, {
+            success: false,
+            error: finishReason
+              ? `Gemini stopped response with reason: ${finishReason}`
+              : 'Gemini returned an empty response. Please try a different prompt.',
+          });
+        }
+      } else {
+        // OpenAI-compatible format
+        const response = await fetch(baseUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+            temperature: 0.7,
+            max_tokens: 800,
+            response_format: { type: 'json_object' },
+          }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorJson = (await response.json().catch(() => null)) as any;
+          const errorDetail =
+            errorJson?.error?.message ||
+            `Provider error (${response.status}). Please check API key configuration.`;
+
+          if ((response.status === 429 || response.status === 403 || response.status === 401 || response.status === 400) && attempt + 1 < maxAttempts) {
+            console.warn(`API key attempt ${attempt + 1}/${maxAttempts} failed with ${response.status} (${errorDetail}), rotating to next key in pool...`);
+            lastError = errorDetail;
+            continue;
+          }
+
+          console.error('OpenAI-compatible provider error:', response.status, errorDetail);
+          return sendResponse(res, response.status >= 500 ? 502 : 400, {
+            success: false,
+            error: errorDetail,
+          });
+        }
+
+        const json = (await response.json()) as any;
+        rawContent = json.choices?.[0]?.message?.content || '';
       }
 
-      const json = (await response.json()) as any;
-      rawContent = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      // Parse and validate AI output
+      const results = parseAndValidateAIResponse(
+        rawContent,
+        options.tone,
+        options.count
+      );
 
-      if (!rawContent) {
-        const finishReason = json.candidates?.[0]?.finishReason;
+      if (results.length === 0) {
         return sendResponse(res, 502, {
           success: false,
-          error: finishReason
-            ? `Gemini stopped response with reason: ${finishReason}`
-            : 'Gemini returned an empty candidate. Please try a different prompt.',
+          error:
+            'The AI model returned an unparseable response. Please retry with a slightly different prompt.',
         });
       }
-    } else {
-      // Standard OpenAI-compatible format (OpenAI, Groq, OpenRouter, DeepSeek, Ollama)
-      const response = await fetch(baseUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          temperature: 0.7,
-          max_tokens: 800,
-          response_format: { type: 'json_object' },
-        }),
-        signal: controller.signal,
-      });
 
+      return sendResponse(res, 200, {
+        success: true,
+        results,
+        count: results.length,
+        provider: provider === 'gemini' ? 'Google Gemini 2.5 Flash' : model,
+      });
+    } catch (err: any) {
       clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        const errorJson = (await response.json().catch(() => null)) as any;
-        const errorDetail =
-          errorJson?.error?.message ||
-          `Provider error (${response.status}). Please check your API key configuration.`;
-        console.error('OpenAI-compatible provider error:', response.status, errorDetail);
-        return sendResponse(res, response.status >= 500 ? 502 : 400, {
+      if (err.name === 'AbortError') {
+        return sendResponse(res, 504, {
           success: false,
-          error: errorDetail,
+          error: 'The AI service timed out. Please try a shorter prompt or retry.',
         });
       }
 
-      const json = (await response.json()) as any;
-      rawContent = json.choices?.[0]?.message?.content || '';
+      console.error('Server error during text generation:', err.message);
+      lastError = err.message || 'Network error';
     }
-
-    // 6. Parse and validate AI output
-    const results = parseAndValidateAIResponse(
-      rawContent,
-      options.tone,
-      options.count
-    );
-
-    if (results.length === 0) {
-      return sendResponse(res, 502, {
-        success: false,
-        error:
-          'The AI model returned an unparseable response. Please retry with a slightly different prompt.',
-      });
-    }
-
-    return sendResponse(res, 200, {
-      success: true,
-      results,
-      count: results.length,
-      provider: provider === 'gemini' ? 'Google Gemini' : model,
-    });
-  } catch (err: any) {
-    clearTimeout(timeoutId);
-
-    if (err.name === 'AbortError') {
-      return sendResponse(res, 504, {
-        success: false,
-        error: 'The AI service timed out. Please try a shorter prompt or retry.',
-      });
-    }
-
-    console.error('Server error during text generation');
-    return sendResponse(res, 500, {
-      success: false,
-      error: 'An unexpected internal error occurred while generating text.',
-    });
   }
+
+  return sendResponse(res, 500, {
+    success: false,
+    error: lastError || 'An unexpected error occurred while generating text across available keys.',
+  });
 }
