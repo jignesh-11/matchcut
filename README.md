@@ -17,6 +17,13 @@
 
 ## Key Features
 
+- **MatchCut AI Sentence Generator**:
+  - Natural language AI copywriting tailored for kinetic typography and match-cut videos.
+  - Multi-tone support (`Cinematic`, `Motivational`, `Dark`, `Emotional`, `Minimal`, `Dramatic`, `Bold`, etc.).
+  - Target sentence lengths: `Ultra-Short` (1–4 words), `Short` (3–7 words), and `Medium` (6–12 words).
+  - Intelligent anchor word suggestion with interactive 1-click word reassignment before applying.
+  - Multi-Cut Script Story mode: creates a cohesive sequence of short lines that tell a story across cuts.
+  - Secure serverless API integration with support for OpenAI (`gpt-4o-mini`), Google Gemini (`gemini-1.5-flash`), Groq (`llama-3.1-8b-instant`), or any OpenAI-compatible provider.
 - **Sub-Pixel Anchor Engine**: Calculates font ascents, descents, alignments, and visual centers to guarantee the match word never drifts, regardless of font family or scale.
 - **12 Dynamic Layout Engines**:
   - `Center Stack`: Classic balanced kinetic stack.
@@ -129,6 +136,46 @@ Preview the production build locally:
 ```bash
 npm run preview
 ```
+
+---
+
+## MatchCut AI Setup & Configuration
+
+MatchCut AI generates punchy quotes and multi-cut story lines using a secure server-side endpoint (`/api/generate`).
+
+### 1. Environment Variables
+
+Create a `.env` file in the project root (see `.env.example`):
+
+```bash
+# Required: Your AI Provider API Key (OpenAI, Gemini, Groq, OpenRouter, DeepSeek)
+AI_API_KEY=your_key_here
+
+# Optional: Provider choice ('openai' | 'gemini' | 'groq') (default: openai)
+AI_PROVIDER=openai
+
+# Optional: Model name (default: gpt-4o-mini for openai, gemini-1.5-flash for gemini)
+AI_MODEL=gpt-4o-mini
+
+# Optional: Custom OpenAI-compatible base URL (e.g. for Groq, OpenRouter, or DeepSeek)
+# AI_BASE_URL=https://api.openai.com/v1/chat/completions
+```
+
+> **Security Note**: Never prefix `AI_API_KEY` with `VITE_`. The API key is kept strictly server-side and never bundled into client browser code.
+
+### 2. Vercel Production Deployment
+
+In your Vercel Project Dashboard:
+1. Go to **Settings** → **Environment Variables**.
+2. Add `AI_API_KEY` with your secret key value.
+3. (Optional) Add `AI_PROVIDER` and `AI_MODEL`.
+4. Redeploy. Vercel automatically deploys the `/api/generate` serverless function.
+
+### 3. Approximate Pricing & Cost Efficiency
+
+- Using `gpt-4o-mini` (OpenAI): ~$0.15 per 1M input tokens. A typical generation request costs less than **$0.0001** (a fraction of a cent).
+- Using `gemini-1.5-flash` (Google): Includes free-tier usage, with extremely low per-token pricing thereafter.
+- Using Groq `llama-3.1-8b-instant`: Sub-100ms ultra-fast inference with free/low-cost tiers.
 
 ---
 

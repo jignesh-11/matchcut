@@ -2,9 +2,46 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+function apiDevPlugin() {
+  return {
+    name: 'api-dev-server',
+    configureServer(server: any) {
+      server.middlewares.use(async (req: any, res: any, next: any) => {
+        if (req.url && req.url.startsWith('/api/generate')) {
+          try {
+            // Read request body if not already parsed
+            if (!req.body) {
+              const chunks: Buffer[] = [];
+              for await (const chunk of req) {
+                chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+              }
+              const rawStr = Buffer.concat(chunks).toString('utf-8');
+              try {
+                req.body = JSON.parse(rawStr);
+              } catch {
+                req.body = rawStr;
+              }
+            }
+
+            const module = await server.ssrLoadModule('./api/generate.ts');
+            await module.default(req, res);
+          } catch (err: any) {
+            console.error('Local API dev error:', err);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, error: err.message || 'Local API handler failure' }));
+          }
+          return;
+        }
+        next();
+      });
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), apiDevPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

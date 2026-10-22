@@ -142,6 +142,10 @@ export interface EditorStoreState {
   setIsExporting: (exporting: boolean, progress?: number) => void;
   setNotification: (msg: string | null) => void;
 
+  // Text & AI actions
+  applyAISentence: (text: string, matchWord: string) => void;
+  applyAIScript: (lines: string[], matchWord: string) => void;
+
   // Playback actions
   setIsPlaying: (playing: boolean) => void;
   setCurrentTime: (time: number) => void;
@@ -284,6 +288,32 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
       const state = get();
       const undoStack = pushToUndo(state);
       set({ matchWord: newWord, occurrenceIndex: 0, undoStack, redoStack: [] });
+      get().regenerateCompositions(false);
+    },
+
+    applyAISentence: (sentenceText, anchorWord) => {
+      const state = get();
+      const undoStack = pushToUndo(state);
+      set({
+        text: sentenceText,
+        matchWord: anchorWord,
+        occurrenceIndex: 0,
+        undoStack,
+        redoStack: [],
+      });
+      get().regenerateCompositions(false);
+    },
+
+    applyAIScript: (lines, anchorWord) => {
+      const state = get();
+      const undoStack = pushToUndo(state);
+      set({
+        text: lines.join('\n'),
+        matchWord: anchorWord,
+        occurrenceIndex: 0,
+        undoStack,
+        redoStack: [],
+      });
       get().regenerateCompositions(false);
     },
 

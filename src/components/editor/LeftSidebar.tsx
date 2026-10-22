@@ -26,6 +26,7 @@ import { TYPOGRAPHY_PRESETS } from '../../presets/typography';
 import { BACKGROUND_PRESETS } from '../../presets/backgrounds';
 import { ANIMATION_PRESETS } from '../../presets/animations';
 import { THEME_PRESETS, ThemePreset } from '../../presets/themes';
+import { MatchCutAIPanel } from '../ai/MatchCutAIPanel';
 
 const SAMPLE_TEXTS = [
   {
@@ -106,6 +107,7 @@ export const LeftSidebar: React.FC = () => {
   } = useEditorStore();
 
   const [activeThemeId, setActiveThemeId] = useState<string | null>(null);
+  const [textSubTab, setTextSubTab] = useState<'ai' | 'manual'>('ai');
   const [showAdvancedStyle, setShowAdvancedStyle] = useState(false);
   const [showAdvancedLayout, setShowAdvancedLayout] = useState(false);
   const [showAdvancedMotion, setShowAdvancedMotion] = useState(false);
@@ -202,191 +204,226 @@ export const LeftSidebar: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-4 space-y-5 text-xs text-slate-300">
         {/* ===================== TAB 1: TEXT ===================== */}
         {activeSidebarTab === 'text' && (
-          <div className="space-y-5">
-            {/* 1-Click Aesthetic Themes */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-[11px] font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-                  <span>1-Click Aesthetic Themes</span>
-                </label>
-                <span className="text-[10px] text-blue-400 font-medium">Instant Vibe</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {THEME_PRESETS.map((theme) => {
-                  const isSelected = activeThemeId === theme.id;
-                  return (
-                    <button
-                      key={theme.id}
-                      onClick={() => handleApplyTheme(theme)}
-                      className={`p-2.5 text-left rounded-xl border transition-all text-xs flex flex-col justify-between relative group ${
-                        isSelected
-                          ? 'bg-blue-600/20 border-blue-500 shadow-md shadow-blue-500/15 ring-1 ring-blue-500/50'
-                          : 'bg-[#161a23] border-[#252c3c] hover:bg-[#1e2330] hover:border-[#384357]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full mb-1">
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/50 text-blue-300 uppercase tracking-wider">
-                          {theme.badge}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full border border-black/40 shadow-sm"
-                            style={{ backgroundColor: theme.colors[0] }}
-                          />
-                          <span
-                            className="w-2.5 h-2.5 rounded-full border border-black/40 shadow-sm"
-                            style={{ backgroundColor: theme.colors[1] }}
-                          />
-                        </div>
-                      </div>
-                      <div className="font-bold text-white text-[12px] group-hover:text-blue-300 transition-colors">
-                        {theme.name}
-                      </div>
-                      <div className="text-[10px] text-slate-400 leading-tight mt-0.5 line-clamp-1">
-                        {theme.tagline}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="space-y-4">
+            {/* Mode Sub-tabs: AI Generation vs Manual Script */}
+            <div className="grid grid-cols-2 p-1 bg-[#0e1117] rounded-xl border border-[#232936] shadow-sm">
+              <button
+                onClick={() => setTextSubTab('ai')}
+                className={`py-1.5 px-2 rounded-lg font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all ${
+                  textSubTab === 'ai'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/20'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>MatchCut AI</span>
+              </button>
+
+              <button
+                onClick={() => setTextSubTab('manual')}
+                className={`py-1.5 px-2 rounded-lg font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all ${
+                  textSubTab === 'manual'
+                    ? 'bg-[#1e2430] text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Type className="w-3.5 h-3.5" />
+                <span>Script & Themes</span>
+              </button>
             </div>
 
-            {/* Quick Templates */}
-            <div>
-              <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
-                Trending Prompts
-              </label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {SAMPLE_TEXTS.map((sample, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      setText(sample.text);
-                      setMatchWord(sample.matchWord);
-                    }}
-                    className="px-2.5 py-1.5 text-left rounded bg-[#171b23] hover:bg-[#202532] border border-[#242933] text-[11px] font-medium text-slate-300 hover:text-white transition-colors truncate"
-                  >
-                    {sample.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* AI Generator Panel */}
+            {textSubTab === 'ai' && <MatchCutAIPanel />}
 
-            {/* Source Text Input */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                  Source Script
-                </label>
-                <span className="text-[10px] text-slate-500">
-                  {text.split(/\s+/).filter(Boolean).length} words
-                </span>
-              </div>
-              <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                rows={4}
-                placeholder="Enter words or lines of text..."
-                className="w-full bg-[#171a22] border border-[#272e3b] rounded-lg p-2.5 text-white font-mono text-xs focus:outline-none focus:border-blue-500 transition-colors resize-none shadow-inner"
-              />
-            </div>
-
-            {/* Match Word Selector */}
-            <div className="p-3 bg-[#171b24] rounded-lg border border-[#262d3c] space-y-3">
-              <div>
-                <label className="text-[11px] font-bold text-blue-400 uppercase tracking-wider block mb-1">
-                  Anchored Match Word / Phrase
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={matchWord}
-                    onChange={(e) => setMatchWord(e.target.value)}
-                    placeholder="Enter word to anchor..."
-                    className="flex-1 bg-[#0f1217] border border-[#2c3444] rounded px-2.5 py-1.5 text-white font-semibold text-xs focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                {/* Case sensitivity and match stats */}
-                <div className="flex items-center justify-between pt-1.5">
-                  <label className="text-[10px] text-slate-400 flex items-center gap-1.5 cursor-pointer hover:text-slate-200">
-                    <input
-                      type="checkbox"
-                      checked={anchor.caseSensitive || false}
-                      onChange={(e) => setAnchor({ caseSensitive: e.target.checked })}
-                      className="rounded bg-[#0f1217] border-[#2c3444] text-blue-500 focus:ring-0 w-3.5 h-3.5"
-                    />
-                    <span>Case sensitive</span>
-                  </label>
-                  <span className="text-[10px] text-slate-500 font-mono">
-                    {occurrences.length} {occurrences.length === 1 ? 'match' : 'matches'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Missing match warning notice */}
-              {occurrences.length === 0 && matchWord.trim().length > 0 && (
-                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
-                  <div>
-                    <span className="font-semibold">Notice:</span> "{matchWord}" does not appear in your source script. Anchoring will maintain the standalone word locked across cuts while displaying source lines around it.
-                  </div>
-                </div>
-              )}
-
-              {/* Occurrences Selector if found multiple times */}
-              {occurrences.length > 1 && (
+            {/* Manual Script & Themes */}
+            {textSubTab === 'manual' && (
+              <div className="space-y-5">
+                {/* 1-Click Aesthetic Themes */}
                 <div>
-                  <div className="text-[10px] text-slate-400 mb-1">
-                    Occurs {occurrences.length} times in text. Select target:
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[11px] font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                      <span>1-Click Aesthetic Themes</span>
+                    </label>
+                    <span className="text-[10px] text-blue-400 font-medium">Instant Vibe</span>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {occurrences.map((occ, idx) => (
+                  <div className="grid grid-cols-2 gap-2">
+                    {THEME_PRESETS.map((theme) => {
+                      const isSelected = activeThemeId === theme.id;
+                      return (
+                        <button
+                          key={theme.id}
+                          onClick={() => handleApplyTheme(theme)}
+                          className={`p-2.5 text-left rounded-xl border transition-all text-xs flex flex-col justify-between relative group ${
+                            isSelected
+                              ? 'bg-blue-600/20 border-blue-500 shadow-md shadow-blue-500/15 ring-1 ring-blue-500/50'
+                              : 'bg-[#161a23] border-[#252c3c] hover:bg-[#1e2330] hover:border-[#384357]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full mb-1">
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-black/50 text-blue-300 uppercase tracking-wider">
+                              {theme.badge}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-black/40 shadow-sm"
+                                style={{ backgroundColor: theme.colors[0] }}
+                              />
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-black/40 shadow-sm"
+                                style={{ backgroundColor: theme.colors[1] }}
+                              />
+                            </div>
+                          </div>
+                          <div className="font-bold text-white text-[12px] group-hover:text-blue-300 transition-colors">
+                            {theme.name}
+                          </div>
+                          <div className="text-[10px] text-slate-400 leading-tight mt-0.5 line-clamp-1">
+                            {theme.tagline}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Quick Templates */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                    Trending Prompts
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {SAMPLE_TEXTS.map((sample, i) => (
                       <button
-                        key={idx}
-                        onClick={() => setOccurrenceIndex(idx)}
-                        className={`px-2 py-1 rounded text-[10px] font-medium border ${
-                          occurrenceIndex === idx
-                            ? 'bg-blue-600/30 border-blue-500 text-blue-300'
-                            : 'bg-[#10131a] border-[#252b38] text-slate-400 hover:text-slate-200'
-                        }`}
+                        key={i}
+                        onClick={() => {
+                          setText(sample.text);
+                          setMatchWord(sample.matchWord);
+                        }}
+                        className="px-2.5 py-1.5 text-left rounded bg-[#171b23] hover:bg-[#202532] border border-[#242933] text-[11px] font-medium text-slate-300 hover:text-white transition-colors truncate"
                       >
-                        #{idx + 1}
+                        {sample.label}
                       </button>
                     ))}
                   </div>
                 </div>
-              )}
 
-              {/* Click-to-pick helper */}
-              <div>
-                <div className="text-[10px] text-slate-400 mb-1.5">
-                  Click any word below to lock as match word:
+                {/* Source Text Input */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                      Source Script
+                    </label>
+                    <span className="text-[10px] text-slate-500">
+                      {text.split(/\s+/).filter(Boolean).length} words
+                    </span>
+                  </div>
+                  <textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    rows={4}
+                    placeholder="Enter words or lines of text..."
+                    className="w-full bg-[#171a22] border border-[#272e3b] rounded-lg p-2.5 text-white font-mono text-xs focus:outline-none focus:border-blue-500 transition-colors resize-none shadow-inner"
+                  />
                 </div>
-                <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto p-1 bg-[#0f1217] rounded border border-[#202634]">
-                  {Array.from(new Set(text.split(/[\s,\.!?\n]+/).filter((w) => w.length > 0))).map(
-                    (w, i) => {
-                      const isCurrent = w.toLowerCase() === matchWord.toLowerCase();
-                      return (
-                        <button
-                          key={i}
-                          onClick={() => setMatchWord(w)}
-                          className={`px-2 py-0.5 rounded text-[11px] transition-colors ${
-                            isCurrent
-                              ? 'bg-blue-600 text-white font-bold'
-                              : 'bg-[#191e28] text-slate-300 hover:bg-[#252c3c] hover:text-white'
-                          }`}
-                        >
-                          {w}
-                        </button>
-                      );
-                    }
+
+                {/* Match Word Selector */}
+                <div className="p-3 bg-[#171b24] rounded-lg border border-[#262d3c] space-y-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-blue-400 uppercase tracking-wider block mb-1">
+                      Anchored Match Word / Phrase
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={matchWord}
+                        onChange={(e) => setMatchWord(e.target.value)}
+                        placeholder="Enter word to anchor..."
+                        className="flex-1 bg-[#0f1217] border border-[#2c3444] rounded px-2.5 py-1.5 text-white font-semibold text-xs focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    {/* Case sensitivity and match stats */}
+                    <div className="flex items-center justify-between pt-1.5">
+                      <label className="text-[10px] text-slate-400 flex items-center gap-1.5 cursor-pointer hover:text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={anchor.caseSensitive || false}
+                          onChange={(e) => setAnchor({ caseSensitive: e.target.checked })}
+                          className="rounded bg-[#0f1217] border-[#2c3444] text-blue-500 focus:ring-0 w-3.5 h-3.5"
+                        />
+                        <span>Case sensitive</span>
+                      </label>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {occurrences.length} {occurrences.length === 1 ? 'match' : 'matches'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Missing match warning notice */}
+                  {occurrences.length === 0 && matchWord.trim().length > 0 && (
+                    <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                      <div>
+                        <span className="font-semibold">Notice:</span> "{matchWord}" does not appear in your source script. Anchoring will maintain the standalone word locked across cuts while displaying source lines around it.
+                      </div>
+                    </div>
                   )}
+
+                  {/* Occurrences Selector if found multiple times */}
+                  {occurrences.length > 1 && (
+                    <div>
+                      <div className="text-[10px] text-slate-400 mb-1">
+                        Occurs {occurrences.length} times in text. Select target:
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {occurrences.map((occ, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setOccurrenceIndex(idx)}
+                            className={`px-2 py-1 rounded text-[10px] font-medium border ${
+                              occurrenceIndex === idx
+                                ? 'bg-blue-600/30 border-blue-500 text-blue-300'
+                                : 'bg-[#10131a] border-[#252b38] text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            #{idx + 1}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Click-to-pick helper */}
+                  <div>
+                    <div className="text-[10px] text-slate-400 mb-1.5">
+                      Click any word below to lock as match word:
+                    </div>
+                    <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto p-1 bg-[#0f1217] rounded border border-[#202634]">
+                      {Array.from(new Set(text.split(/[\s,\.!?\n]+/).filter((w) => w.length > 0))).map(
+                        (w, i) => {
+                          const isCurrent = w.toLowerCase() === matchWord.toLowerCase();
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => setMatchWord(w)}
+                              className={`px-2 py-0.5 rounded text-[11px] transition-colors ${
+                                isCurrent
+                                ? 'bg-blue-600 text-white font-bold'
+                                : 'bg-[#191e28] text-slate-300 hover:bg-[#252c3c] hover:text-white'
+                            }`}
+                          >
+                            {w}
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
         {/* ===================== TAB 2: LAYOUT ===================== */}
         {activeSidebarTab === 'layout' && (
