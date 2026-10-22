@@ -10,6 +10,7 @@ export interface GenerateCompositionsOptions {
   text: string;
   matchWord: string;
   occurrenceIndex?: number;
+  caseSensitive?: boolean;
   canvasWidth: number;
   canvasHeight: number;
   targetAnchorX: number;
@@ -47,6 +48,7 @@ export class MatchCutEngine {
       text,
       matchWord,
       occurrenceIndex = 0,
+      caseSensitive = false,
       canvasWidth,
       canvasHeight,
       targetAnchorX,
@@ -91,7 +93,8 @@ export class MatchCutEngine {
           effectiveMatch,
           occurrenceIndex,
           i,
-          attemptRng
+          attemptRng,
+          caseSensitive
         );
 
         // 2. Generate draft layout
@@ -99,6 +102,8 @@ export class MatchCutEngine {
           phrase,
           canvasWidth,
           canvasHeight,
+          targetAnchorX,
+          targetAnchorY,
           fontConfig,
           rng: attemptRng,
           style: activeStyle,
@@ -164,6 +169,8 @@ export class MatchCutEngine {
           phrase,
           canvasWidth,
           canvasHeight,
+          targetAnchorX,
+          targetAnchorY,
           fontConfig,
           rng: fallbackRng,
           style: 'center-stack',

@@ -23,6 +23,7 @@ export interface MatchWordAnchorConfig {
   y: number; // percentage (0 to 1)
   lockAnchor: boolean;
   showAnchorIndicator: boolean;
+  caseSensitive?: boolean; // When true, matching requires exact casing; default false
 }
 
 export interface AnimationSettings {

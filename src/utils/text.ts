@@ -14,11 +14,15 @@ export function normalizeText(text: string): string {
 }
 
 /**
- * Finds all occurrences of matchWord in the source text (case-insensitive)
+ * Finds all occurrences of matchWord in the source text
+ * @param fullText The complete input script
+ * @param matchWord Target word or phrase to locate
+ * @param caseSensitive When true, match requires exact casing; default false (case-insensitive)
  */
 export function findMatchWordOccurrences(
   fullText: string,
-  matchWord: string
+  matchWord: string,
+  caseSensitive: boolean = false
 ): MatchOccurrence[] {
   if (!fullText || !matchWord) return [];
 
@@ -28,11 +32,21 @@ export function findMatchWordOccurrences(
   const occurrences: MatchOccurrence[] = [];
   // Escape special regex characters
   const escaped = trimmedWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // Match word boundary or exact substring
-  const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+  const flags = caseSensitive ? 'g' : 'gi';
+
+  // Check if trimmedWord starts and ends with alphanumeric characters for word boundary
+  const startsWithWord = /^\w/.test(trimmedWord);
+  const endsWithWord = /\w$/.test(trimmedWord);
+  const pattern = `${startsWithWord ? '\\b' : ''}${escaped}${endsWithWord ? '\\b' : ''}`;
+
+  let regex: RegExp;
+  try {
+    regex = new RegExp(pattern, flags);
+  } catch {
+    regex = new RegExp(escaped, flags);
+  }
 
   let match: RegExpExecArray | null;
-  let fallbackRegex: RegExp | null = null;
 
   while ((match = regex.exec(fullText)) !== null) {
     const startIndex = match.index;
@@ -50,9 +64,9 @@ export function findMatchWordOccurrences(
     });
   }
 
-  // If no word-boundary match, try raw substring search (e.g. for punctuation-attached words)
+  // If no boundary match, try raw substring search (e.g. for punctuation-attached words)
   if (occurrences.length === 0) {
-    fallbackRegex = new RegExp(escaped, 'gi');
+    const fallbackRegex = new RegExp(escaped, flags);
     while ((match = fallbackRegex.exec(fullText)) !== null) {
       const startIndex = match.index;
       const endIndex = startIndex + match[0].length;
@@ -85,9 +99,10 @@ export interface SplitToken {
 export function tokenizeTextWithMatch(
   text: string,
   matchWord: string,
-  occurrenceIndex: number = 0
+  occurrenceIndex: number = 0,
+  caseSensitive: boolean = false
 ): { tokens: SplitToken[]; hasMatch: boolean; matchedString: string } {
-  const occurrences = findMatchWordOccurrences(text, matchWord);
+  const occurrences = findMatchWordOccurrences(text, matchWord, caseSensitive);
   if (occurrences.length === 0) {
     // If not found, return regular word tokens
     const words = text.split(/(\s+)/);
@@ -171,12 +186,14 @@ export interface TextPhraseGroup {
 export function groupTextAroundMatch(
   text: string,
   matchWord: string,
-  occurrenceIndex: number = 0
+  occurrenceIndex: number = 0,
+  caseSensitive: boolean = false
 ): TextPhraseGroup {
   const { tokens, hasMatch, matchedString } = tokenizeTextWithMatch(
     text,
     matchWord,
-    occurrenceIndex
+    occurrenceIndex,
+    caseSensitive
   );
 
   if (!hasMatch) {

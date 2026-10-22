@@ -8,6 +8,8 @@ describe('Project serialization and deserialization', () => {
     store.setText('Custom project text here.\nAnchor word is here.');
     store.setMatchWord('Anchor');
     store.setSeed(98765);
+    store.setSound({ effect: 'whoosh', enabled: true, volume: 0.9 });
+    store.setBackground({ type: 'solid', color: '#112233' });
 
     const exportedJSON = store.exportProjectJSON();
     expect(typeof exportedJSON).toBe('string');
@@ -17,6 +19,7 @@ describe('Project serialization and deserialization', () => {
     expect(parsed.text).toContain('Custom project text');
     expect(parsed.matchWord).toBe('Anchor');
     expect(parsed.seed).toBe(98765);
+    expect(parsed.background.color).toBe('#112233');
 
     // Re-import into store
     const success = store.importProjectJSON(exportedJSON);
@@ -25,6 +28,7 @@ describe('Project serialization and deserialization', () => {
     const updatedState = useEditorStore.getState();
     expect(updatedState.matchWord).toBe('Anchor');
     expect(updatedState.seed).toBe(98765);
+    expect(updatedState.background.color).toBe('#112233');
   });
 
   it('should reject invalid or malicious JSON during import', () => {
@@ -34,5 +38,29 @@ describe('Project serialization and deserialization', () => {
     expect(store.importProjectJSON('null')).toBe(false);
     expect(store.importProjectJSON('{"random": 123}')).toBe(false);
     expect(store.importProjectJSON('{"text": 12345}')).toBe(false);
+    expect(store.importProjectJSON('{"text": "valid", "matchWord": 456}')).toBe(false);
+  });
+
+  it('should safely fallback to default configurations for optional corrupted properties', () => {
+    const store = useEditorStore.getState();
+    const partialJSON = JSON.stringify({
+      version: 1,
+      text: 'Sample text with Valid word',
+      matchWord: 'Valid',
+      canvasDimensions: null,
+      anchor: null,
+      fontConfig: null,
+      background: null,
+    });
+
+    const success = store.importProjectJSON(partialJSON);
+    expect(success).toBe(true);
+
+    const updated = useEditorStore.getState();
+    expect(updated.text).toBe('Sample text with Valid word');
+    expect(updated.matchWord).toBe('Valid');
+    expect(updated.canvasWidth).toBe(1080);
+    expect(updated.canvasHeight).toBe(1920);
+    expect(updated.anchor.lockAnchor).toBe(true);
   });
 });

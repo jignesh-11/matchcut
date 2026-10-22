@@ -71,6 +71,7 @@ export const DEFAULT_ANCHOR: MatchWordAnchorConfig = {
   y: 0.5,
   lockAnchor: true,
   showAnchorIndicator: false,
+  caseSensitive: false,
 };
 
 export const DEFAULT_SOUND: SoundConfig = {
@@ -185,6 +186,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
     text: DEFAULT_TEXT,
     matchWord: DEFAULT_MATCH_WORD,
     occurrenceIndex: 0,
+    caseSensitive: false,
     canvasWidth: initDimensions.width,
     canvasHeight: initDimensions.height,
     targetAnchorX: initDimensions.width * DEFAULT_ANCHOR.x,
@@ -431,6 +433,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
         text: state.text,
         matchWord: state.matchWord,
         occurrenceIndex: state.occurrenceIndex,
+        caseSensitive: state.anchor.caseSensitive ?? false,
         canvasWidth: state.canvasWidth,
         canvasHeight: state.canvasHeight,
         targetAnchorX: targetX,
@@ -571,6 +574,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
         text: DEFAULT_TEXT,
         matchWord: DEFAULT_MATCH_WORD,
         occurrenceIndex: 0,
+        caseSensitive: false,
         canvasWidth: dims.width,
         canvasHeight: dims.height,
         targetAnchorX: dims.width * DEFAULT_ANCHOR.x,

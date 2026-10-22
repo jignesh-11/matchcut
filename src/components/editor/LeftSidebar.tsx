@@ -14,6 +14,7 @@ import {
   SlidersHorizontal,
   Volume2,
   VolumeX,
+  AlertCircle,
 } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { AVAILABLE_FONTS } from '../../engine/fonts/fontManager';
@@ -120,7 +121,7 @@ export const LeftSidebar: React.FC = () => {
     setTimeout(() => setNotification(null), 2500);
   };
 
-  const occurrences = findMatchWordOccurrences(text, matchWord);
+  const occurrences = findMatchWordOccurrences(text, matchWord, anchor.caseSensitive ?? false);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -306,7 +307,32 @@ export const LeftSidebar: React.FC = () => {
                     className="flex-1 bg-[#0f1217] border border-[#2c3444] rounded px-2.5 py-1.5 text-white font-semibold text-xs focus:outline-none focus:border-blue-500"
                   />
                 </div>
+                {/* Case sensitivity and match stats */}
+                <div className="flex items-center justify-between pt-1.5">
+                  <label className="text-[10px] text-slate-400 flex items-center gap-1.5 cursor-pointer hover:text-slate-200">
+                    <input
+                      type="checkbox"
+                      checked={anchor.caseSensitive || false}
+                      onChange={(e) => setAnchor({ caseSensitive: e.target.checked })}
+                      className="rounded bg-[#0f1217] border-[#2c3444] text-blue-500 focus:ring-0 w-3.5 h-3.5"
+                    />
+                    <span>Case sensitive</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {occurrences.length} {occurrences.length === 1 ? 'match' : 'matches'}
+                  </span>
+                </div>
               </div>
+
+              {/* Missing match warning notice */}
+              {occurrences.length === 0 && matchWord.trim().length > 0 && (
+                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                  <div>
+                    <span className="font-semibold">Notice:</span> "{matchWord}" does not appear in your source script. Anchoring will maintain the standalone word locked across cuts while displaying source lines around it.
+                  </div>
+                </div>
+              )}
 
               {/* Occurrences Selector if found multiple times */}
               {occurrences.length > 1 && (

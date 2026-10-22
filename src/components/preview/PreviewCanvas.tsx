@@ -39,6 +39,7 @@ export const PreviewCanvas: React.FC = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const timeCounterRef = useRef<HTMLSpanElement>(null);
 
   // Playback animation loop refs to keep 60fps loop independent of React state updates
   const animFrameIdRef = useRef<number | null>(null);
@@ -60,10 +61,17 @@ export const PreviewCanvas: React.FC = () => {
   // Keep refs in sync
   useEffect(() => {
     currentTimeRef.current = currentTime;
-  }, [currentTime]);
+    if (timeCounterRef.current) {
+      const totalDur = compositions.reduce((sum, c) => sum + c.duration, 0) || 1;
+      timeCounterRef.current.textContent = `${formatTime(currentTime)} / ${formatTime(totalDur)}`;
+    }
+  }, [currentTime, compositions]);
 
   useEffect(() => {
     isPlayingRef.current = isPlaying;
+    if (isPlaying) {
+      lastTimeRef.current = performance.now();
+    }
   }, [isPlaying]);
 
   // Pre-load fonts when compositions change
@@ -127,8 +135,10 @@ export const PreviewCanvas: React.FC = () => {
   // Main animation loop
   useEffect(() => {
     const loop = (timestamp: number) => {
-      const deltaSec = (timestamp - lastTimeRef.current) / 1000;
+      const rawDeltaSec = (timestamp - lastTimeRef.current) / 1000;
       lastTimeRef.current = timestamp;
+      // Clamp delta to prevent time acceleration / frame leap after pause or background tab
+      const deltaSec = Math.min(Math.max(rawDeltaSec, 0), 0.1);
 
       // FPS tracking
       fpsFrameCountRef.current++;
@@ -148,6 +158,9 @@ export const PreviewCanvas: React.FC = () => {
           lastPlayedCompIndexRef.current = -1;
         }
         currentTimeRef.current = nextTime;
+        if (timeCounterRef.current) {
+          timeCounterRef.current.textContent = `${formatTime(nextTime)} / ${formatTime(totalDuration)}`;
+        }
         drawFrame(nextTime);
       } else {
         drawFrame(currentTimeRef.current);
@@ -156,12 +169,18 @@ export const PreviewCanvas: React.FC = () => {
       animFrameIdRef.current = requestAnimationFrame(loop);
     };
 
+    if (animFrameIdRef.current !== null) {
+      cancelAnimationFrame(animFrameIdRef.current);
+      animFrameIdRef.current = null;
+    }
+
     lastTimeRef.current = performance.now();
     animFrameIdRef.current = requestAnimationFrame(loop);
 
     return () => {
-      if (animFrameIdRef.current) {
+      if (animFrameIdRef.current !== null) {
         cancelAnimationFrame(animFrameIdRef.current);
+        animFrameIdRef.current = null;
       }
     };
   }, [
@@ -313,7 +332,7 @@ export const PreviewCanvas: React.FC = () => {
 
           {/* Time & Cut Counters */}
           <div className="flex items-center gap-2 font-mono text-[11px] text-slate-300">
-            <span>
+            <span ref={timeCounterRef}>
               {formatTime(currentTimeRef.current)} / {formatTime(totalDuration)}
             </span>
             <span className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-sans font-medium text-slate-300">

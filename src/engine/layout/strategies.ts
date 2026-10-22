@@ -9,6 +9,8 @@ export interface LayoutGeneratorContext {
   phrase: LayoutPhraseStructure;
   canvasWidth: number;
   canvasHeight: number;
+  targetAnchorX?: number;
+  targetAnchorY?: number;
   fontConfig: FontConfig;
   rng: SeededRandom;
   style: LayoutStyle;
@@ -52,8 +54,13 @@ export function generateDraftLayout(ctx: LayoutGeneratorContext): {
       draft = layoutKinetic(ctx); break;
   }
 
-  const maxWidth = ctx.canvasWidth * 0.9;
+  const maxWidth = ctx.canvasWidth * 0.92;
+  const targetY = ctx.targetAnchorY ?? (ctx.canvasHeight * 0.5);
+  const availableTop = Math.max(80, targetY - 40);
+  const availableBottom = Math.max(80, ctx.canvasHeight - targetY - 40);
+
   for (const el of draft.elements) {
+    // 1. Horizontal boundary clamping
     if (el.bounds.width > maxWidth) {
       const scale = maxWidth / el.bounds.width;
       el.fontSize = Math.max(10, Math.floor(el.fontSize * scale));
@@ -71,6 +78,59 @@ export function generateDraftLayout(ctx: LayoutGeneratorContext): {
       );
       el.width = el.bounds.width;
       el.height = el.bounds.height;
+    }
+
+    // 2. Layout-aware vertical spacing adaptation for non-match surrounding elements
+    if (!el.isMatchWord) {
+      if (el.y < 0) {
+        // Element is stacked above match word
+        const topExtent = Math.abs(el.y) + el.height / 2;
+        if (topExtent > availableTop) {
+          const ratio = availableTop / topExtent;
+          el.y = Math.round(el.y * ratio * 0.95);
+          if (ratio < 0.8) {
+            el.fontSize = Math.max(10, Math.round(el.fontSize * Math.max(0.65, ratio)));
+          }
+          el.bounds = computeTextVisualBounds(
+            el.text,
+            el.x,
+            el.y,
+            el.fontFamily,
+            el.fontSize,
+            el.fontWeight,
+            el.fontStyle || 'normal',
+            el.letterSpacing,
+            el.alignment,
+            'middle'
+          );
+          el.width = el.bounds.width;
+          el.height = el.bounds.height;
+        }
+      } else if (el.y > 0) {
+        // Element is stacked below match word
+        const bottomExtent = el.y + el.height / 2;
+        if (bottomExtent > availableBottom) {
+          const ratio = availableBottom / bottomExtent;
+          el.y = Math.round(el.y * ratio * 0.95);
+          if (ratio < 0.8) {
+            el.fontSize = Math.max(10, Math.round(el.fontSize * Math.max(0.65, ratio)));
+          }
+          el.bounds = computeTextVisualBounds(
+            el.text,
+            el.x,
+            el.y,
+            el.fontFamily,
+            el.fontSize,
+            el.fontWeight,
+            el.fontStyle || 'normal',
+            el.letterSpacing,
+            el.alignment,
+            'middle'
+          );
+          el.width = el.bounds.width;
+          el.height = el.bounds.height;
+        }
+      }
     }
   }
 

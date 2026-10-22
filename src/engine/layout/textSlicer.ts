@@ -16,9 +16,10 @@ export function generateTextSliceVariation(
   matchWord: string,
   occurrenceIndex: number,
   compositionIndex: number,
-  rng: SeededRandom
+  rng: SeededRandom,
+  caseSensitive: boolean = false
 ): LayoutPhraseStructure {
-  const grouped = groupTextAroundMatch(fullText, matchWord, occurrenceIndex);
+  const grouped = groupTextAroundMatch(fullText, matchWord, occurrenceIndex, caseSensitive);
 
   // If text is short or single line, we can chunk prefix and suffix into 1, 2, or 3 lines
   const prefixWords = grouped.prefixLines;

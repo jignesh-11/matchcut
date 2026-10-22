@@ -3,6 +3,7 @@ import { Muxer as WebmMuxer, ArrayBufferTarget as WebmArrayBufferTarget } from '
 import { Composition, BackgroundConfig, EffectsConfig, TransitionType, AspectRatioType } from '../../types/rendering';
 import { SoundConfig } from '../../types/editor';
 import { soundManager } from '../audio/soundManager';
+import { fontManager } from '../fonts/fontManager';
 import { canvasRenderer } from '../renderer/canvasRenderer';
 
 export interface ExportJobOptions {
@@ -61,8 +62,14 @@ export class VideoExporter {
    * Main export method that executes WebCodecs or MediaRecorder fallback
    */
   public static async exportVideo(options: ExportJobOptions): Promise<Blob> {
-    const { onProgress, sound } = options;
+    const { onProgress, sound, compositions } = options;
     onProgress(0.01);
+
+    // Pre-load all font families used in compositions before rendering starts
+    const fontFamilies = Array.from(
+      new Set(compositions.flatMap((c) => c.elements.map((el) => el.fontFamily)))
+    );
+    await fontManager.ensureFontsLoaded(fontFamilies);
 
     // If sound is enabled and an effect is chosen, route through MediaRecorder to mux audio track
     if (sound && sound.enabled && sound.effect !== 'none') {
@@ -266,6 +273,20 @@ export class VideoExporter {
     const totalFrames = Math.max(1, Math.round(totalDuration * fps));
 
     const stream = canvas.captureStream(fps);
+    let audioCtx: AudioContext | null = null;
+    let audioSource: AudioBufferSourceNode | null = null;
+
+    const cleanupResources = () => {
+      try {
+        audioSource?.stop();
+      } catch {}
+      try {
+        audioCtx?.close();
+      } catch {}
+      try {
+        stream.getTracks().forEach((track) => track.stop());
+      } catch {}
+    };
 
     // If sound is enabled, synthesize and attach audio track to the stream
     if (options.sound && options.sound.enabled && options.sound.effect !== 'none') {
@@ -279,7 +300,10 @@ export class VideoExporter {
 
         const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         if (AudioCtx) {
-          const audioCtx = new AudioCtx();
+          audioCtx = new AudioCtx();
+          if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+          }
           const dest = audioCtx.createMediaStreamDestination();
           const audioBuf = await soundManager.renderOfflineAudioTrack(
             totalDuration,
@@ -288,10 +312,10 @@ export class VideoExporter {
             options.sound.volume
           );
           if (audioBuf) {
-            const source = audioCtx.createBufferSource();
-            source.buffer = audioBuf;
-            source.connect(dest);
-            source.start(0);
+            audioSource = audioCtx.createBufferSource();
+            audioSource.buffer = audioBuf;
+            audioSource.connect(dest);
+            audioSource.start(0);
             const audioTrack = dest.stream.getAudioTracks()[0];
             if (audioTrack) {
               stream.addTrack(audioTrack);
@@ -322,10 +346,12 @@ export class VideoExporter {
     recorder.start();
 
     const frameIntervalMs = 1000 / fps;
+    const startTime = performance.now();
 
     for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
       if (signal?.aborted) {
         recorder.stop();
+        cleanupResources();
         throw new Error('Export cancelled');
       }
 
@@ -349,12 +375,20 @@ export class VideoExporter {
         height,
       });
 
-      onProgress(Math.min(0.98, frameIndex / totalFrames));
-      await new Promise((r) => setTimeout(r, frameIntervalMs * 0.5));
+      onProgress(Math.min(0.98, (frameIndex + 1) / totalFrames));
+
+      // Wall-clock synchronization to match real-time audio playback
+      const targetElapsedMs = (frameIndex + 1) * frameIntervalMs;
+      const actualElapsedMs = performance.now() - startTime;
+      const sleepMs = Math.max(0, targetElapsedMs - actualElapsedMs);
+      if (sleepMs > 0) {
+        await new Promise((r) => setTimeout(r, sleepMs));
+      }
     }
 
     const recordedPromise = new Promise<Blob>((resolve) => {
       recorder.onstop = () => {
+        cleanupResources();
         onProgress(1.0);
         resolve(new Blob(recordedChunks, { type: mimeType }));
       };
@@ -364,7 +398,15 @@ export class VideoExporter {
     return await recordedPromise;
   }
 
-  public static downloadBlob(blob: Blob, filename: string): void {
+  public static downloadBlob(blob: Blob, suggestedFilename: string): void {
+    // Ensure file extension matches actual encoded MIME container
+    const isMp4 = blob.type.toLowerCase().includes('mp4');
+    const expectedExt = isMp4 ? '.mp4' : '.webm';
+    let filename = suggestedFilename;
+    if (!filename.toLowerCase().endsWith(expectedExt)) {
+      filename = filename.replace(/\.(mp4|webm)$/i, '') + expectedExt;
+    }
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -372,7 +414,7 @@ export class VideoExporter {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 }
 
