@@ -14,6 +14,8 @@ import {
   Film,
   ListOrdered,
   Quote,
+  Key,
+  ExternalLink,
 } from 'lucide-react';
 import { useEditorStore } from '../../stores/editorStore';
 import { AIService } from '../../engine/ai/aiService';
@@ -72,6 +74,18 @@ export const MatchCutAIPanel: React.FC = () => {
   const [count, setCount] = useState<number>(5);
   const [mode, setMode] = useState<AIMode>('sentences');
 
+  // Client-configurable API key (stored in localStorage) for users with their own Gemini key
+  const [userApiKey, setUserApiKey] = useState<string>(() => {
+    return typeof localStorage !== 'undefined'
+      ? localStorage.getItem('matchcut_ai_key') || ''
+      : '';
+  });
+  const [showKeyConfig, setShowKeyConfig] = useState<boolean>(() => {
+    return typeof localStorage !== 'undefined'
+      ? !localStorage.getItem('matchcut_ai_key')
+      : false;
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<AIGeneratedSentence[]>([]);
   const [selectedAnchors, setSelectedAnchors] = useState<Record<string, string>>({});
@@ -81,6 +95,18 @@ export const MatchCutAIPanel: React.FC = () => {
   const [showOptions, setShowOptions] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const handleSaveApiKey = (keyVal: string) => {
+    const clean = keyVal.trim();
+    setUserApiKey(clean);
+    if (typeof localStorage !== 'undefined') {
+      if (clean) {
+        localStorage.setItem('matchcut_ai_key', clean);
+      } else {
+        localStorage.removeItem('matchcut_ai_key');
+      }
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -102,11 +128,15 @@ export const MatchCutAIPanel: React.FC = () => {
           count,
           mode,
         },
+        userApiKey,
         abortControllerRef.current.signal
       );
 
       if (!response.success || response.results.length === 0) {
         setErrorMessage(response.error || 'No results generated. Please try again.');
+        if (response.error?.includes('AI_API_KEY') || response.error?.includes('API key')) {
+          setShowKeyConfig(true);
+        }
         setIsLoading(false);
         return;
       }
@@ -175,12 +205,71 @@ export const MatchCutAIPanel: React.FC = () => {
             <span>MatchCut AI Generator</span>
           </div>
           <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono text-[9px] uppercase tracking-wider font-semibold border border-blue-400/30">
-            GPT / Gemini Ready
+            Gemini 1.5 & GPT Ready
           </span>
         </div>
         <p className="text-[11px] text-slate-300 leading-relaxed">
           Describe any concept or narrative. Receive punchy kinetic typography sentences with sub-pixel match-word anchors.
         </p>
+      </div>
+
+      {/* API Key Configuration Section (Free Gemini or OpenAI Key) */}
+      <div className="p-2.5 rounded-xl bg-[#141822] border border-[#262e3e] space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 font-bold text-slate-200 text-[11px]">
+            <Key className="w-3.5 h-3.5 text-amber-400" />
+            <span>AI Key Configuration</span>
+            {userApiKey ? (
+              <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-semibold">
+                ✓ {userApiKey.startsWith('AIzaSy') ? 'Gemini Free Key Active' : 'Active'}
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-semibold">
+                Free Key Option
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setShowKeyConfig(!showKeyConfig)}
+            className="text-[10px] text-blue-400 hover:text-blue-300 font-semibold"
+          >
+            {showKeyConfig ? 'Hide' : userApiKey ? 'Edit Key' : 'Enter Key'}
+          </button>
+        </div>
+
+        {showKeyConfig && (
+          <div className="pt-1.5 border-t border-white/5 space-y-2 animate-in fade-in">
+            <div className="flex gap-1.5">
+              <input
+                type="password"
+                value={userApiKey}
+                onChange={(e) => handleSaveApiKey(e.target.value)}
+                placeholder="Paste Gemini (AIzaSy...) or OpenAI (sk-...) key"
+                className="flex-1 bg-[#0d1017] border border-[#2a3344] rounded px-2.5 py-1.5 text-white font-mono text-[11px] focus:outline-none focus:border-blue-500"
+              />
+              {userApiKey && (
+                <button
+                  onClick={() => handleSaveApiKey('')}
+                  className="px-2 py-1 bg-red-950/40 hover:bg-red-900/40 border border-red-700/50 text-red-300 rounded text-[10px]"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-slate-400">
+              <span>Supports <strong>Google Gemini (free)</strong>, Groq, or OpenAI</span>
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-400 hover:text-blue-300 flex items-center gap-0.5 font-semibold underline"
+              >
+                <span>Get free Gemini key</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mode Selector (Sentences vs Multi-Cut Script) */}

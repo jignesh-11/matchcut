@@ -6,14 +6,20 @@ export class AIService {
    */
   public static async generateSentences(
     options: AIGenerationOptions,
+    apiKey?: string,
     signal?: AbortSignal
   ): Promise<AIGenerationResponse> {
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (apiKey && apiKey.trim().length > 0) {
+        headers['x-api-key'] = apiKey.trim();
+      }
+
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(options),
         signal,
       });

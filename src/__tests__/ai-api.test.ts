@@ -165,9 +165,57 @@ describe('Serverless API Route: /api/generate', () => {
     expect(res.getStatusCode()).toBe(502);
     const data = res.getData();
     expect(data.success).toBe(false);
-    expect(data.error).toContain('AI provider returned error (500)');
+    expect(data.error).toContain('Provider error (500)');
     // Crucial security requirement: API key must NEVER be leaked in errors
     expect(JSON.stringify(data)).not.toContain('secret-api-key-999');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('should auto-detect Gemini provider when apiKey starts with AIzaSy', async () => {
+    delete process.env.AI_PROVIDER;
+    delete process.env.AI_BASE_URL;
+
+    const mockGeminiResponse = {
+      candidates: [
+        {
+          content: {
+            parts: [
+              {
+                text: JSON.stringify({
+                  results: [
+                    { id: '1', text: 'Gemini flash sentence.', suggestedAnchor: 'flash' },
+                  ],
+                }),
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementationOnce(async (url: any) => {
+      // Verify URL points to generativelanguage.googleapis.com
+      expect(url.toString()).toContain('generativelanguage.googleapis.com');
+      return {
+        ok: true,
+        status: 200,
+        json: async () => mockGeminiResponse,
+      } as any;
+    });
+
+    const { req, res } = createMockReqRes('POST', {
+      prompt: 'Testing Gemini auto detection',
+      apiKey: 'AIzaSyFakeGeminiKey12345',
+    });
+
+    await handler(req, res);
+
+    expect(res.getStatusCode()).toBe(200);
+    const data = res.getData();
+    expect(data.success).toBe(true);
+    expect(data.results[0].text).toBe('Gemini flash sentence.');
+    expect(data.provider).toBe('Google Gemini');
 
     fetchSpy.mockRestore();
   });
