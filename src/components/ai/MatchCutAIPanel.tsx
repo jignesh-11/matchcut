@@ -62,6 +62,7 @@ const LENGTHS: { id: AILength; label: string; desc: string }[] = [
   { id: 'ultra-short', label: 'Ultra-Short', desc: '1–4 words' },
   { id: 'short', label: 'Short', desc: '3–7 words' },
   { id: 'medium', label: 'Medium', desc: '6–12 words' },
+  { id: 'long', label: 'Long', desc: '10–20 words' },
 ];
 
 export const MatchCutAIPanel: React.FC = () => {
@@ -305,13 +306,13 @@ export const MatchCutAIPanel: React.FC = () => {
             <span>Describe your video</span>
           </label>
           <span className="text-[10px] font-mono text-slate-500">
-            {prompt.length} / 1000
+            {prompt.length} / 3000
           </span>
         </div>
         <textarea
           value={prompt}
-          onChange={(e) => setPrompt(e.target.value.slice(0, 1000))}
-          rows={3}
+          onChange={(e) => setPrompt(e.target.value.slice(0, 3000))}
+          rows={4}
           placeholder="e.g. A cinematic story about working hard in silence and proving everyone wrong..."
           className="w-full bg-[#121620] border border-[#262e3e] rounded-lg p-2.5 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-blue-500 transition-colors resize-none shadow-inner"
         />
@@ -393,7 +394,7 @@ export const MatchCutAIPanel: React.FC = () => {
               <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                 Sentence Length
               </label>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 {LENGTHS.map((len) => (
                   <button
                     key={len.id}

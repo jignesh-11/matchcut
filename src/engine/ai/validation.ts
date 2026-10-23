@@ -14,9 +14,9 @@ export const VALID_TONES: AITone[] = [
   'custom',
 ];
 
-export const VALID_LENGTHS: AILength[] = ['ultra-short', 'short', 'medium'];
+export const VALID_LENGTHS: AILength[] = ['ultra-short', 'short', 'medium', 'long'];
 export const VALID_COUNTS = [5, 8, 10];
-export const MAX_PROMPT_LENGTH = 1000;
+export const MAX_PROMPT_LENGTH = 3000;
 
 export interface ValidationResult<T> {
   valid: boolean;
@@ -147,9 +147,11 @@ export function buildSystemPrompt(options: Required<AIGenerationOptions>): strin
   const lengthGuide =
     length === 'ultra-short'
       ? 'Ultra-short: 1 to 4 words per sentence.'
-      : length === 'medium'
-      ? 'Medium: 6 to 12 words per sentence.'
-      : 'Short: 3 to 7 words per sentence.';
+      : length === 'short'
+      ? 'Short: 3 to 7 words per sentence.'
+      : length === 'long'
+      ? 'Long / Extended: 10 to 20 words per sentence with rich poetic or cinematic depth.'
+      : 'Medium: 6 to 12 words per sentence.';
 
   if (mode === 'script') {
     return `You are a world-class creative copywriter specializing in rapid kinetic typography and match-cut video scripts.

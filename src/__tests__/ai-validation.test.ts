@@ -66,6 +66,16 @@ describe('MatchCut AI Validation & Parsing Engine', () => {
       expect(res.valid).toBe(true);
       expect(res.data?.mode).toBe('script');
     });
+
+    it('should accept long length option and build appropriate system prompt', () => {
+      const res = validateGenerationOptions({ prompt: 'deep quote', length: 'long' });
+      expect(res.valid).toBe(true);
+      expect(res.data?.length).toBe('long');
+      if (res.data) {
+        const prompt = buildSystemPrompt(res.data);
+        expect(prompt).toContain('10 to 20 words');
+      }
+    });
   });
 
   describe('suggested-anchor validation & resolution', () => {

@@ -20,7 +20,7 @@ export type AITone =
   | 'inspirational'
   | 'custom';
 
-export type AILength = 'ultra-short' | 'short' | 'medium';
+export type AILength = 'ultra-short' | 'short' | 'medium' | 'long';
 export type AIMode = 'sentences' | 'script';
 
 export interface AIGenerationOptions {
@@ -60,9 +60,9 @@ export const VALID_TONES: AITone[] = [
   'custom',
 ];
 
-export const VALID_LENGTHS: AILength[] = ['ultra-short', 'short', 'medium'];
+export const VALID_LENGTHS: AILength[] = ['ultra-short', 'short', 'medium', 'long'];
 export const VALID_COUNTS = [5, 8, 10];
-export const MAX_PROMPT_LENGTH = 1000;
+export const MAX_PROMPT_LENGTH = 3000;
 
 /**
  * Validates incoming AI generation request parameters
@@ -182,9 +182,11 @@ export function buildSystemPrompt(options: Required<AIGenerationOptions>): strin
   const lengthGuide =
     length === 'ultra-short'
       ? 'Ultra-short: 1 to 4 words per sentence.'
-      : length === 'medium'
-      ? 'Medium: 6 to 12 words per sentence.'
-      : 'Short: 3 to 7 words per sentence.';
+      : length === 'short'
+      ? 'Short: 3 to 7 words per sentence.'
+      : length === 'long'
+      ? 'Long / Extended: 10 to 20 words per sentence with rich poetic or cinematic depth.'
+      : 'Medium: 6 to 12 words per sentence.';
 
   if (mode === 'script') {
     return `You are a world-class creative copywriter specializing in rapid kinetic typography and match-cut video scripts.
@@ -485,9 +487,17 @@ export default async function handler(req: any, res: any) {
       provider = 'gemini';
     }
 
+    // For Gemini: provide seamless fallback models if a model encounters 503 high demand
+    const GEMINI_MODELS = [
+      process.env.AI_MODEL || 'gemini-2.5-flash',
+      'gemini-3.5-flash',
+      'gemini-flash-latest',
+    ];
+
     const model =
-      process.env.AI_MODEL ||
-      (provider === 'gemini' ? 'gemini-2.5-flash' : 'gpt-4o-mini');
+      provider === 'gemini'
+        ? GEMINI_MODELS[attempt % GEMINI_MODELS.length]
+        : (process.env.AI_MODEL || 'gpt-4o-mini');
 
     const baseUrl =
       process.env.AI_BASE_URL ||
@@ -539,9 +549,9 @@ export default async function handler(req: any, res: any) {
             errorJson?.error?.message ||
             `Gemini API returned error code ${response.status}.`;
 
-          // If key fails due to rate limit (429) or key-specific authorization/quota/leaked issues, try next key in pool
-          if ((response.status === 429 || response.status === 403 || response.status === 401 || response.status === 400) && attempt + 1 < maxAttempts) {
-            console.warn(`Key attempt ${attempt + 1}/${maxAttempts} failed with ${response.status} (${errorDetail}), rotating to next key in pool...`);
+          // If key/model fails due to high demand (503), rate limit (429), or key-specific issues (403, 401, 400), rotate to next key and model
+          if (attempt + 1 < maxAttempts) {
+            console.warn(`Key attempt ${attempt + 1}/${maxAttempts} (${model}) failed with ${response.status} (${errorDetail}), rotating to next key/model in pool...`);
             lastError = errorDetail;
             continue;
           }
@@ -558,6 +568,10 @@ export default async function handler(req: any, res: any) {
 
         if (!rawContent) {
           const finishReason = json.candidates?.[0]?.finishReason;
+          if (attempt + 1 < maxAttempts) {
+            console.warn(`Attempt ${attempt + 1}/${maxAttempts} returned empty content (${finishReason}), rotating to next key/model in pool...`);
+            continue;
+          }
           return sendResponse(res, 502, {
             success: false,
             error: finishReason
@@ -594,7 +608,7 @@ export default async function handler(req: any, res: any) {
             errorJson?.error?.message ||
             `Provider error (${response.status}). Please check API key configuration.`;
 
-          if ((response.status === 429 || response.status === 403 || response.status === 401 || response.status === 400) && attempt + 1 < maxAttempts) {
+          if (attempt + 1 < maxAttempts) {
             console.warn(`API key attempt ${attempt + 1}/${maxAttempts} failed with ${response.status} (${errorDetail}), rotating to next key in pool...`);
             lastError = errorDetail;
             continue;
@@ -630,7 +644,7 @@ export default async function handler(req: any, res: any) {
         success: true,
         results,
         count: results.length,
-        provider: provider === 'gemini' ? 'Google Gemini 2.5 Flash' : model,
+        provider: provider === 'gemini' ? `Google Gemini (${model})` : model,
       });
     } catch (err: any) {
       clearTimeout(timeoutId);

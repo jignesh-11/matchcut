@@ -11,7 +11,7 @@ export type AITone =
   | 'inspirational'
   | 'custom';
 
-export type AILength = 'ultra-short' | 'short' | 'medium';
+export type AILength = 'ultra-short' | 'short' | 'medium' | 'long';
 
 export type AIMode = 'sentences' | 'script';
 

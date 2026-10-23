@@ -75,8 +75,8 @@ describe('Serverless API Route: /api/generate', () => {
     expect(res.getData().error).toContain('Prompt is required');
   });
 
-  it('should reject prompt exceeding 1000 characters with 400 Bad Request', async () => {
-    const { req, res } = createMockReqRes('POST', { prompt: 'x'.repeat(1001) });
+  it('should reject prompt exceeding character limit with 400 Bad Request', async () => {
+    const { req, res } = createMockReqRes('POST', { prompt: 'x'.repeat(3001) });
     await handler(req, res);
 
     expect(res.getStatusCode()).toBe(400);
@@ -218,6 +218,64 @@ describe('Serverless API Route: /api/generate', () => {
     expect(data.success).toBe(true);
     expect(data.results[0].text).toBe('Gemini flash sentence.');
     expect(data.provider).toContain('Google Gemini');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('should automatically failover to next key and succeed when a key encounters 503 high demand', async () => {
+    process.env.AI_API_KEY = 'AIzaSyKeyOne111,AIzaSyKeyTwo222';
+    delete process.env.AI_PROVIDER;
+
+    const mockSuccessResponse = {
+      candidates: [
+        {
+          content: {
+            parts: [
+              {
+                text: JSON.stringify({
+                  results: [
+                    { id: '1', text: 'Resilient sentence after 503 retry.', suggestedAnchor: 'retry' },
+                  ],
+                }),
+              },
+            ],
+          },
+        },
+      ],
+    };
+
+    let callCount = 0;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      callCount++;
+      if (callCount === 1) {
+        // First key returns 503 high demand
+        return {
+          ok: false,
+          status: 503,
+          json: async () => ({
+            error: { message: 'This model is currently experiencing high demand. Please try again later.' },
+          }),
+        } as any;
+      }
+      // Second key succeeds
+      return {
+        ok: true,
+        status: 200,
+        json: async () => mockSuccessResponse,
+      } as any;
+    });
+
+    const { req, res } = createMockReqRes('POST', {
+      prompt: 'Testing automatic failover on 503',
+    });
+
+    await handler(req, res);
+
+    expect(callCount).toBe(2);
+    expect(res.getStatusCode()).toBe(200);
+    const data = res.getData();
+    expect(data.success).toBe(true);
+    expect(data.results[0].text).toBe('Resilient sentence after 503 retry.');
 
     fetchSpy.mockRestore();
   });
