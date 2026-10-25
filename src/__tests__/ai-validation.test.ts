@@ -176,6 +176,8 @@ describe('MatchCut AI Validation & Parsing Engine', () => {
       expect(prompt).toContain('8');
       expect(prompt).toContain('kinetic typography');
       expect(prompt).toContain('JSON');
+      expect(prompt).toContain('independently usable');
+      expect(prompt).toContain('Do NOT force a story arc');
     });
 
     it('should build sequential narrative prompt for script mode', () => {

@@ -219,9 +219,10 @@ Your task is to generate ${count} distinct, punchy sentence variations based on 
 Style & Tone Guidelines:
 - Tone: ${effectiveTone}.
 - Target length: ${lengthGuide}
-- Variety: Provide distinct creative angles and phrase structures, not just minor word swaps.
+- Standalone Independence: Each generated sentence MUST be completely self-contained and independently usable on its own. Do NOT force a story arc, chronological sequence, or narrative progression into standalone quotes. Treat each quote as an individual, self-sufficient creative option.
+- Variety: Provide distinct creative angles, metaphors, and phrase structures, not sequential story beats or minor word swaps.
 - Impact: Strong verbs, striking imagery, memorable cadence suitable for bold screen typography.
-- Prohibitions: NO hashtags, NO emojis, NO conversational filler ("Here are your quotes:"), NO markdown fences outside of JSON.
+- Prohibitions: NO hashtags, NO emojis, NO conversational filler ("Here are your quotes:"), NO markdown fences outside of JSON, NO story arcs or chronological linking between quotes.
 - Output Format: You MUST return a single valid JSON object strictly matching this schema:
 {
   "results": [
