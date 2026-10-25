@@ -16,6 +16,7 @@ import {
 } from '../types/rendering';
 import { MatchCutEngine } from '../engine/layout/compositionGenerator';
 import { findMatchWordOccurrences } from '../utils/text';
+import { validateOrResolveAnchor, findBestScriptAnchor } from '../engine/ai/validation';
 
 const STORAGE_KEY = 'matchtype_project_v1';
 
@@ -294,9 +295,10 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
     applyAISentence: (sentenceText, anchorWord) => {
       const state = get();
       const undoStack = pushToUndo(state);
+      const safeAnchor = validateOrResolveAnchor(sentenceText, anchorWord);
       set({
         text: sentenceText,
-        matchWord: anchorWord,
+        matchWord: safeAnchor,
         occurrenceIndex: 0,
         undoStack,
         redoStack: [],
@@ -307,9 +309,13 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
     applyAIScript: (lines, anchorWord) => {
       const state = get();
       const undoStack = pushToUndo(state);
+      const fullText = lines.join('\n');
+      const safeAnchor = anchorWord
+        ? validateOrResolveAnchor(fullText, anchorWord)
+        : findBestScriptAnchor(lines);
       set({
-        text: lines.join('\n'),
-        matchWord: anchorWord,
+        text: fullText,
+        matchWord: safeAnchor,
         occurrenceIndex: 0,
         undoStack,
         redoStack: [],

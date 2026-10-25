@@ -130,9 +130,12 @@ export function validateGenerationOptions(raw: unknown): ValidationResult<Requir
 }
 
 /**
- * Extracts and cleans words from a sentence to identify sensible candidate anchor words
+ * Extracts and cleans words from a sentence to identify sensible candidate anchor words.
+ * Prioritizes visually striking, high-impact content words (nouns, action verbs)
+ * while filtering out weak stop words, pronouns, and auxiliary verbs.
  */
 export function findBestAnchorWord(sentence: string): string {
+  // Extract words stripped of surrounding punctuation
   const words = sentence
     .split(/\s+/)
     .map((w) => w.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, ''))
@@ -140,36 +143,107 @@ export function findBestAnchorWord(sentence: string): string {
 
   if (words.length === 0) return 'MATCH';
 
+  // Comprehensive stop words, prepositions, pronouns, auxiliary verbs, and weak fillers
   const stopWords = new Set([
-    'a', 'an', 'the', 'and', 'or', 'but', 'is', 'it', 'in', 'on', 'at', 'to',
-    'for', 'of', 'with', 'by', 'from', 'up', 'down', 'my', 'your', 'his', 'her',
-    'its', 'our', 'their', 'this', 'that', 'these', 'those', 'am', 'are', 'was', 'were'
+    'a', 'an', 'the', 'and', 'or', 'but', 'nor', 'so', 'yet',
+    'is', 'it', 'its', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'as',
+    'up', 'down', 'out', 'off', 'over', 'under', 'again', 'further', 'then', 'once',
+    'my', 'your', 'his', 'her', 'our', 'their', 'this', 'that', 'these', 'those',
+    'am', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing',
+    'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must',
+    'i', 'me', 'we', 'us', 'you', 'he', 'him', 'she', 'they', 'them', 'what', 'which', 'who', 'whom',
+    'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such',
+    'no', 'not', 'only', 'own', 'same', 'too', 'very', 'just', 'into', 'through', 'during', 'before', 'after',
+    'above', 'below', 'between', 'against', 'here', 'there', 'about'
   ]);
 
+  // Preferred high-value typography anchor words: nouns and strong action verbs (3+ chars)
   const contentWords = words.filter((w) => !stopWords.has(w.toLowerCase()) && w.length >= 3);
   if (contentWords.length > 0) {
-    return contentWords.reduce((best, cur) => (cur.length > best.length ? cur : best), contentWords[0]);
+    // Score candidate words: length sweet spot (4-9 chars), visual prominence, and capitalization
+    const scored = contentWords.map((word) => {
+      let score = 0;
+      const len = word.length;
+      if (len >= 4 && len <= 9) score += 6;
+      else if (len >= 3) score += 3;
+      if (/^[A-Z][a-z]+$/.test(word)) score += 2;
+      return { word, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored[0].word;
   }
 
-  return words[0];
+  return words.find((w) => w.length >= 3) || words[0];
 }
 
 /**
- * Verifies if an anchor word actually appears in the text; if not, finds a valid anchor word
+ * Verifies if an anchor word actually appears in the text using strict whole-word boundaries.
+ * Prevents accidental substring matching inside unrelated words (e.g. "in" matching inside "silence").
  */
 export function validateOrResolveAnchor(text: string, candidateAnchor?: string): string {
   if (candidateAnchor && typeof candidateAnchor === 'string') {
     const cleanCandidate = candidateAnchor.trim().replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '');
     if (cleanCandidate.length > 0) {
+      // Must match as an entire standalone word with word boundary, not an accidental partial substring
       const escaped = cleanCandidate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-      if (regex.test(text) || text.toLowerCase().includes(cleanCandidate.toLowerCase())) {
-        return cleanCandidate;
+      const wordRegex = new RegExp(`\\b${escaped}\\b`, 'i');
+      if (wordRegex.test(text)) {
+        const match = text.match(wordRegex);
+        return match ? match[0].replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '') : cleanCandidate;
       }
     }
   }
 
   return findBestAnchorWord(text);
+}
+
+/**
+ * Detects if a common anchor word recurs across multiple lines of a multi-cut script.
+ * If a recurring anchor is found, it makes a premier match-cut anchor for kinetic transitions.
+ */
+export function findBestScriptAnchor(lines: string[]): string {
+  if (lines.length === 0) return 'MATCH';
+  if (lines.length === 1) return findBestAnchorWord(lines[0]);
+
+  // Count occurrences of content words across distinct lines
+  const lineWordSets = lines.map((line) => {
+    const words = line
+      .split(/\s+/)
+      .map((w) => w.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '').toLowerCase())
+      .filter((w) => w.length >= 3);
+    return new Set(words);
+  });
+
+  const wordFrequency = new Map<string, number>();
+  for (const set of lineWordSets) {
+    for (const word of set) {
+      wordFrequency.set(word, (wordFrequency.get(word) || 0) + 1);
+    }
+  }
+
+  // Find candidate that appears in the most lines (at least 2)
+  let bestWord = '';
+  let maxCount = 1;
+
+  for (const [word, count] of wordFrequency.entries()) {
+    const testAnchor = findBestAnchorWord(word);
+    if (testAnchor.toLowerCase() === word && count > maxCount) {
+      maxCount = count;
+      bestWord = word;
+    }
+  }
+
+  if (bestWord) {
+    for (const line of lines) {
+      const match = line.match(new RegExp(`\\b${bestWord}\\b`, 'i'));
+      if (match) return match[0];
+    }
+    return bestWord;
+  }
+
+  return findBestAnchorWord(lines[0]);
 }
 
 /**
@@ -189,16 +263,23 @@ export function buildSystemPrompt(options: Required<AIGenerationOptions>): strin
       : 'Medium: 6 to 12 words per sentence.';
 
   if (mode === 'script') {
-    return `You are a world-class creative copywriter specializing in rapid kinetic typography and match-cut video scripts.
-Your task is to write a cohesive, narrative sequence of ${count} short sequential lines that tell a compelling story together.
+    return `You are a world-class creative copywriter and director specializing in rapid kinetic typography and match-cut video scripts.
+Your task is to write a cohesive, narrative sequence of exactly ${count} sequential lines that tell a compelling story together across video cuts.
+
+Narrative Arc & Structure:
+- Beginning (Cut 1): Establish the hook, setup, or baseline reality.
+- Development (Middle Cuts): Build tension, momentum, or transformation. Every cut must introduce a new beat and push the story forward.
+- Ending (Final Cut): Deliver a punchy, memorable, and satisfying final beat or climax.
+- Continuity: Maintain seamless narrative flow between cuts without abrupt, nonsensical leaps.
+- Formatting Integrity: Do NOT split an arbitrary sentence or paragraph randomly across cuts. Each line must be a complete, self-contained kinetic typography statement or beat that reads rhythmically on screen.
+- Repetition: Avoid repeating the same words or phrases across cuts unless deliberate repetition (e.g. anaphora) is used as an intentional artistic device.
+- Match-Cut Anchor Selection: For each line, select a strong, visually evocative "suggestedAnchor" word that actually appears inside its line. Where natural, prefer words that could form a recurring visual anchor.
 
 Style & Tone Guidelines:
 - Tone: ${effectiveTone}.
 - Line length: ${lengthGuide}
-- Narrative flow: Each line builds upon the previous, creating a dynamic, rhythmic story progression for video cuts.
-- Impact: Highly punchy, emotionally resonant, visually evocative words.
-- Rhythm: Great for fast, dynamic typography on TikTok, Reels, and Shorts.
-- Prohibitions: NO hashtags, NO emojis, NO conversational commentary ("Here is your script"), NO explanations.
+- Impact: Highly punchy, emotionally resonant, visually evocative words tailored for rapid kinetic typography.
+- Prohibitions: NO hashtags, NO emojis, NO conversational commentary ("Here is your script"), NO explanations, NO markdown fences outside of JSON.
 - Output Format: You MUST return a single valid JSON object strictly matching this schema:
 {
   "results": [
@@ -222,6 +303,7 @@ Style & Tone Guidelines:
 - Standalone Independence: Each generated sentence MUST be completely self-contained and independently usable on its own. Do NOT force a story arc, chronological sequence, or narrative progression into standalone quotes. Treat each quote as an individual, self-sufficient creative option.
 - Variety: Provide distinct creative angles, metaphors, and phrase structures, not sequential story beats or minor word swaps.
 - Impact: Strong verbs, striking imagery, memorable cadence suitable for bold screen typography.
+- Match-Cut Anchor Selection: For each quote, choose a prominent, visually meaningful content word (e.g. noun or action verb) that actually appears in the text.
 - Prohibitions: NO hashtags, NO emojis, NO conversational filler ("Here are your quotes:"), NO markdown fences outside of JSON, NO story arcs or chronological linking between quotes.
 - Output Format: You MUST return a single valid JSON object strictly matching this schema:
 {

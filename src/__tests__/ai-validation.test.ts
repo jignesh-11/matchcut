@@ -4,9 +4,11 @@ import {
   parseAndValidateAIResponse,
   validateOrResolveAnchor,
   findBestAnchorWord,
+  findBestScriptAnchor,
   buildSystemPrompt,
   MAX_PROMPT_LENGTH,
 } from '../engine/ai/validation';
+import { CREATIVE_PRESETS } from '../engine/ai/presets';
 
 describe('MatchCut AI Validation & Parsing Engine', () => {
   describe('validateGenerationOptions', () => {
@@ -180,7 +182,7 @@ describe('MatchCut AI Validation & Parsing Engine', () => {
       expect(prompt).toContain('Do NOT force a story arc');
     });
 
-    it('should build sequential narrative prompt for script mode', () => {
+    it('should build sequential narrative prompt for script mode with narrative arc guidelines', () => {
       const prompt = buildSystemPrompt({
         prompt: 'launching an app',
         tone: 'cinematic',
@@ -193,6 +195,65 @@ describe('MatchCut AI Validation & Parsing Engine', () => {
       expect(prompt).toContain('sequential lines');
       expect(prompt).toContain('5');
       expect(prompt).toContain('Ultra-short');
+      expect(prompt).toContain('Beginning');
+      expect(prompt).toContain('Development');
+      expect(prompt).toContain('Ending');
+      expect(prompt).toContain('Continuity');
+      expect(prompt).toContain('Do NOT split an arbitrary sentence');
+    });
+  });
+
+  describe('findBestScriptAnchor', () => {
+    it('should detect a recurring anchor word that appears across multiple cuts', () => {
+      const script = [
+        'Nobody saw the dream.',
+        'Working on a dream in secret.',
+        'Now the dream is reality.',
+      ];
+      const anchor = findBestScriptAnchor(script);
+      expect(anchor.toLowerCase()).toBe('dream');
+    });
+
+    it('should fallback to best anchor of first line if no words recur', () => {
+      const script = [
+        'Solitude forged strength.',
+        'Code compiled cleanly.',
+        'Ship it worldwide.',
+      ];
+      const anchor = findBestScriptAnchor(script);
+      expect(anchor).toBeDefined();
+      expect(typeof anchor).toBe('string');
+      expect(script[0].toLowerCase()).toContain(anchor.toLowerCase());
+    });
+  });
+
+  describe('Creative Presets', () => {
+    it('should define all 12 suggested creative direction presets', () => {
+      const expectedIds = [
+        'solo-developer',
+        'dark-cinematic',
+        'hard-choices',
+        'silent-grind',
+        'comeback-story',
+        'one-sided-love',
+        'late-night-thoughts',
+        'product-launch',
+        'ai-revolution',
+        'unstoppable',
+        'minimal-aesthetic',
+        'unexpected-comedy',
+      ];
+
+      expect(CREATIVE_PRESETS.length).toBe(12);
+      for (const id of expectedIds) {
+        const found = CREATIVE_PRESETS.find((p) => p.id === id);
+        expect(found).toBeDefined();
+        expect(found?.label.length).toBeGreaterThan(0);
+        expect(found?.prompt.length).toBeGreaterThan(10);
+        expect(found?.tone).toBeDefined();
+        expect(found?.length).toBeDefined();
+        expect(found?.mode).toBeDefined();
+      }
     });
   });
 });

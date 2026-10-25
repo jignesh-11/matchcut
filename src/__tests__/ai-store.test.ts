@@ -77,4 +77,32 @@ describe('AI text integration with Editor Store', () => {
     store.undo();
     expect(useEditorStore.getState().text).toBe(initialText);
   });
+
+  it('should safely fallback to valid anchor if candidate anchor is missing from the sentence', () => {
+    const store = useEditorStore.getState();
+
+    // "ghostword" is not in the text
+    store.applyAISentence('Focus on relentless execution.', 'ghostword');
+
+    const updated = useEditorStore.getState();
+    expect(updated.matchWord).not.toBe('ghostword');
+    expect(['execution', 'relentless', 'Focus']).toContain(updated.matchWord);
+    expect(updated.text.toLowerCase()).toContain(updated.matchWord.toLowerCase());
+  });
+
+  it('should detect recurring anchor across cuts when anchorWord is omitted or empty in applyAIScript', () => {
+    const store = useEditorStore.getState();
+
+    const scriptLines = [
+      'Built in silence.',
+      'The silence deepened.',
+      'Now silence speaks.',
+    ];
+
+    // Pass empty string for anchorWord to let script detection find "silence"
+    store.applyAIScript(scriptLines, '');
+
+    const updated = useEditorStore.getState();
+    expect(updated.matchWord.toLowerCase()).toBe('silence');
+  });
 });
