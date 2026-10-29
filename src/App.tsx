@@ -23,7 +23,7 @@ export const App: React.FC = () => {
       </div>
     );
   }
-
+// comment added
   return (
     <div className="h-screen w-screen flex flex-col bg-[#0d0f12] text-slate-100 overflow-hidden font-sans">
       {/* Top Application Bar */}
