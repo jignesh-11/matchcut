@@ -41,7 +41,7 @@ export const TopBar: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `matchcut-project-${Date.now()}.json`;
+    a.download = `wordanchor-project-${Date.now()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -82,7 +82,7 @@ export const TopBar: React.FC = () => {
           </div>
           <div className="hidden sm:block">
             <div className="flex items-center gap-1.5 font-bold tracking-tight text-white text-sm">
-              <span>MATCHTYPE</span>
+              <span>WORDANCHOR</span>
               <span className="text-[10px] font-semibold tracking-wider px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
                 PRO
               </span>

@@ -239,7 +239,7 @@ export const MatchCutAIPanel: React.FC = () => {
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-1.5 font-bold text-white text-xs">
             <Sparkles className="w-4 h-4 text-blue-400" />
-            <span>MatchCut AI Generator</span>
+            <span>WordAnchor AI Generator</span>
           </div>
           <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono text-[9px] uppercase tracking-wider font-semibold border border-blue-400/30">
             Multi-Key Active

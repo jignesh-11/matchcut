@@ -208,7 +208,7 @@ export const useEditorStore = create<EditorStoreState>((set, get) => {
   const getSnapshot = (state: EditorStoreState): ProjectData => ({
     version: 1,
     id: `project-${Date.now()}`,
-    title: 'MatchCut Project',
+    title: 'WordAnchor Project',
     text: state.text,
     matchWord: state.matchWord,
     occurrenceIndex: state.occurrenceIndex,

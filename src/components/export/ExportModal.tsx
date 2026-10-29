@@ -71,7 +71,7 @@ export const ExportModal: React.FC = () => {
 
       // Trigger download automatically
       const extension = blob.type.includes('mp4') ? 'mp4' : 'webm';
-      const filename = `matchcut_${aspectRatio.replace(':', 'x')}_${exportSettings.resolution}_${Date.now()}.${extension}`;
+      const filename = `wordanchor_${aspectRatio.replace(':', 'x')}_${exportSettings.resolution}_${Date.now()}.${extension}`;
       VideoExporter.downloadBlob(blob, filename);
     } catch (err: any) {
       if (err.name !== 'AbortError') {
@@ -92,7 +92,7 @@ export const ExportModal: React.FC = () => {
   const handleDownloadAgain = () => {
     if (!completedBlob) return;
     const extension = completedBlob.type.includes('mp4') ? 'mp4' : 'webm';
-    const filename = `matchcut_${Date.now()}.${extension}`;
+    const filename = `wordanchor_${Date.now()}.${extension}`;
     VideoExporter.downloadBlob(completedBlob, filename);
   };
 

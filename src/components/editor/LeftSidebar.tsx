@@ -216,7 +216,7 @@ export const LeftSidebar: React.FC = () => {
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>MatchCut AI</span>
+                <span>WordAnchor AI</span>
               </button>
 
               <button

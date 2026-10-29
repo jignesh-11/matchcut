@@ -206,7 +206,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <p className="text-[11px] text-slate-500 mt-3 text-center">
-              Rendered in real-time by the MatchCut Engine with zero external server dependencies.
+              Rendered in real-time by the WordAnchor Engine with zero external server dependencies.
             </p>
           </div>
         </div>
@@ -247,7 +247,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Lock Your Pivot Anchor Word</h3>
               <p className="text-sm text-slate-400 leading-relaxed">
-                Select the core word to anchor. MatchCut's geometric engine calculates sub-pixel coordinates to keep that word laser-focused in the same visual spot across cuts.
+                Select the core word to anchor. WordAnchor's geometric engine calculates sub-pixel coordinates to keep that word laser-focused in the same visual spot across cuts.
               </p>
             </div>
 
@@ -326,7 +326,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12 space-y-3">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-              Why Creators Choose MatchCut Over After Effects
+              Why Creators Choose WordAnchor Over After Effects
             </h2>
             <p className="text-slate-400 text-sm">
               Save hours of tedious manual keyframing and anchor point pinning.
@@ -357,7 +357,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="p-6 rounded-2xl bg-blue-950/20 border border-blue-500/30 space-y-3">
-              <h3 className="font-bold text-blue-400 text-sm uppercase tracking-wider">With MatchCut Studio</h3>
+              <h3 className="font-bold text-blue-400 text-sm uppercase tracking-wider">With WordAnchor Studio</h3>
               <ul className="space-y-2.5 text-xs text-slate-300">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -404,20 +404,20 @@ export const LandingPage: React.FC = () => {
                 a: "A text match cut is a viral kinetic typography animation where a selected anchor word remains locked in the exact same visual spot on screen while surrounding words, fonts, layout sizes, and styles dynamically mutate around it. This creates intense visual momentum that stops the scroll and boosts viewer retention on TikTok, Reels, and YouTube Shorts."
               },
               {
-                q: "How do I create a text match cut in MatchCut?",
+                q: "How do I create a text match cut in WordAnchor?",
                 a: "Simply input or paste your script, select the pivot word you want to anchor across cuts, customize your typography themes and motion settings, and export a ready-to-share 60 FPS MP4 video with one click directly in your browser."
               },
               {
-                q: "Is MatchCut free and without watermark?",
-                a: "Yes! MatchCut is completely free to use with zero watermarks and no required sign-ups. All video rendering and export happens client-side on your device via the WebCodecs API."
+                q: "Is WordAnchor free and without watermark?",
+                a: "Yes! WordAnchor is completely free to use with zero watermarks and no required sign-ups. All video rendering and export happens client-side on your device via the WebCodecs API."
               },
               {
                 q: "Do I need Adobe After Effects or Premiere Pro to make text match cuts?",
-                a: "No. In the past, video editors had to manually pin anchor points and keyframe scale across separate layers in After Effects or Premiere Pro. MatchCut automates sub-pixel alignment and dynamic layout balancing entirely in your web browser."
+                a: "No. In the past, video editors had to manually pin anchor points and keyframe scale across separate layers in After Effects or Premiere Pro. WordAnchor automates sub-pixel alignment and dynamic layout balancing entirely in your web browser."
               },
               {
                 q: "What video formats and aspect ratios are supported?",
-                a: "MatchCut exports native 9:16 vertical video at 1080×1920 resolution at up to 60 FPS in standard MP4 (H.264 / AVC) and WebM formats, perfectly ready for TikTok, Instagram Reels, YouTube Shorts, and Snapchat."
+                a: "WordAnchor exports native 9:16 vertical video at 1080×1920 resolution at up to 60 FPS in standard MP4 (H.264 / AVC) and WebM formats, perfectly ready for TikTok, Instagram Reels, YouTube Shorts, and Snapchat."
               }
             ].map((faq, idx) => (
               <div
@@ -484,7 +484,7 @@ export const LandingPage: React.FC = () => {
           <span>Zero Watermark</span>
         </div>
         <p>
-          MatchCut (MatchType) — Free Kinetic Text Match Cut Video Studio • Engineered for viral TikTok, Instagram Reels & YouTube Shorts typography.
+          WordAnchor — Free Kinetic Text Match Cut Video Studio • Engineered for viral TikTok, Instagram Reels & YouTube Shorts typography.
         </p>
       </footer>
     </div>
